@@ -1,24 +1,27 @@
-import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-async function getRecipes() {
+let _cache = null;
+function getRecipeMap() {
+  if (_cache) return _cache;
+  let recipes = [];
   try {
-    const raw = await readFile("data/recipes.json", "utf8");
-    return JSON.parse(raw);
+    recipes = JSON.parse(readFileSync("data/recipes.json", "utf8"));
   } catch {
-    return [];
+    recipes = [];
   }
+  _cache = new Map(recipes.map((r) => [r.slug, r]));
+  return _cache;
 }
 
 export async function generateStaticParams() {
-  const recipes = await getRecipes();
-  return recipes.map((r) => ({ slug: r.slug }));
+  const map = getRecipeMap();
+  return [...map.keys()].map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }) {
-  const recipes = await getRecipes();
-  const recipe = recipes.find((r) => r.slug === params.slug);
+  const recipe = getRecipeMap().get(params.slug);
   if (!recipe) return {};
   return {
     title: `${recipe.name} — Mob Recipes Archive`,
@@ -27,8 +30,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function RecipePage({ params }) {
-  const recipes = await getRecipes();
-  const recipe = recipes.find((r) => r.slug === params.slug);
+  const recipe = getRecipeMap().get(params.slug);
   if (!recipe) notFound();
 
   return (
