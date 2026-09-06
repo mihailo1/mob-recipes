@@ -1,0 +1,25 @@
+{
+  "name": "mob-recipes",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Searchable archive of Mob (mob.co.uk) recipes, built from publicly served recipe structured data (JSON-LD).",
+  "scripts": {
+    "dev": "npm run build-index && next dev",
+    "prebuild": "node scripts/build-index.mjs",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "scrape": "node scripts/scrape.mjs",
+    "build-index": "node scripts/build-index.mjs"
+  },
+  "dependencies": {
+    "fuse.js": "^7.0.0",
+    "next": "14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.2.35"
+  }
+}

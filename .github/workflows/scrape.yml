@@ -1,0 +1,39 @@
+name: Scrape Mob recipes
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Cap number of recipes (leave empty for full run)"
+        required: false
+        default: ""
+  schedule:
+    # Weekly, Monday 04:00 UTC — picks up new recipes Mob publishes.
+    - cron: "0 4 * * 1"
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run scraper
+        env:
+          SCRAPE_LIMIT: ${{ github.event.inputs.limit }}
+        run: node scripts/scrape.mjs
+
+      - name: Commit updated data
+        run: |
+          git config user.name "mob-recipes-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/recipes.json data/scrape-errors.json 2>/dev/null || true
+          git diff --cached --quiet && echo "No changes." && exit 0
+          git commit -m "chore: refresh scraped recipe data"
+          git push
