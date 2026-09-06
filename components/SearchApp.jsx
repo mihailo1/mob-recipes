@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Fuse from "fuse.js";
+import RecipeImage from "./RecipeImage";
 
 const PAGE_SIZE = 40;
 
@@ -102,12 +103,7 @@ export default function SearchApp() {
         <div className="grid">
           {shown.map((r) => (
             <Link key={r.slug} href={`/recipes/${r.slug}`} className="card">
-              {r.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className="card-image" src={r.image} alt={r.name} loading="lazy" />
-              ) : (
-                <div className="card-image" />
-              )}
+              <RecipeImage className="card-image" src={r.image} alt={r.name} />
               <div className="card-body">
                 <div className="card-title">{r.name}</div>
                 <div className="chip-row">

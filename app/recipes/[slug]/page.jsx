@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import RecipeImage from "../../../components/RecipeImage";
 
 let _cache = null;
 function getRecipeMap() {
@@ -39,10 +40,12 @@ export default async function RecipePage({ params }) {
         ← Back to search
       </Link>
 
-      {recipe.image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img className="recipe-hero" src={recipe.image} alt={recipe.name} />
-      ) : null}
+      <RecipeImage
+        className="recipe-hero"
+        src={recipe.image}
+        alt={recipe.name}
+        priority
+      />
 
       <h1 className="recipe-title">{recipe.name}</h1>
       {recipe.description ? (
