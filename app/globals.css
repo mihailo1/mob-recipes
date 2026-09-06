@@ -40,8 +40,77 @@ a {
   padding: 0 20px;
 }
 
+/* Top nav */
+.nav-row {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 54px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-link {
+  position: relative;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.nav-link:hover {
+  color: var(--ink);
+}
+
+.nav-link.active {
+  background: var(--chip-bg);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.text-btn:hover {
+  color: var(--accent);
+  background: var(--chip-bg);
+}
+
 .header {
-  padding: 40px 0 24px;
+  padding: 32px 0 24px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -101,6 +170,7 @@ select {
 }
 
 .card {
+  position: relative;
   background: var(--surface);
   border-radius: var(--radius);
   overflow: hidden;
@@ -112,6 +182,45 @@ select {
 
 .card:hover {
   transform: translateY(-2px);
+}
+
+.card-media {
+  display: block;
+}
+
+.card-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+}
+
+.icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(2px);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: transform 0.12s ease, color 0.12s ease;
+}
+
+.icon-btn:hover {
+  transform: scale(1.08);
+}
+
+.icon-btn.is-active {
+  color: var(--accent);
 }
 
 .card-image {
@@ -206,6 +315,210 @@ select {
 .chip.time {
   background: #fdece5;
   color: var(--accent);
+}
+
+/* Ingredient filter */
+.ingredient-filter {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.ingredient-filter-input-row {
+  display: flex;
+}
+
+.suggestion-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  z-index: 10;
+  overflow: hidden;
+}
+
+.suggestion-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 16px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.suggestion-item:hover {
+  background: var(--chip-bg);
+}
+
+.chip-removable {
+  border: none;
+  cursor: pointer;
+}
+
+.chip-removable:hover {
+  background: #fdece5;
+  color: var(--accent);
+}
+
+/* Recipe action buttons */
+.action-row {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0 4px;
+}
+
+.pill-btn {
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.pill-btn:hover {
+  border-color: var(--accent);
+}
+
+.pill-btn.is-active {
+  background: #fdece5;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.section-title-row .section-title {
+  margin: 0;
+}
+
+.servings-stepper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.servings-stepper button {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.servings-stepper button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ingredient-mark {
+  background: #fdece5;
+  color: var(--accent);
+  border-radius: 4px;
+  padding: 0 3px;
+  font-weight: 600;
+  cursor: help;
+}
+
+/* Pool page */
+.pool-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 40px;
+  margin: 28px 0 50px;
+}
+
+@media (max-width: 720px) {
+  .pool-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pool-recipe-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pool-recipe-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.pool-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  flex: none;
+}
+
+.pool-recipe-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.shopping-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shopping-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.shopping-list li label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.shopping-list li input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.shopping-list li.is-checked span {
+  text-decoration: line-through;
+  color: var(--ink-muted);
+}
+
+.ingredient-sources {
+  font-size: 11px;
+  color: var(--ink-muted);
+  white-space: nowrap;
 }
 
 .load-more {

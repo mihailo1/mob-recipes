@@ -1,4 +1,6 @@
 import "./globals.css";
+import { KitchenProvider } from "../lib/store";
+import NavBar from "../components/NavBar";
 
 export const metadata = {
   title: "Mob Recipes Archive",
@@ -9,7 +11,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <KitchenProvider>
+          <NavBar />
+          {children}
+        </KitchenProvider>
+      </body>
     </html>
   );
 }

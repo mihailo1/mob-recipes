@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import RecipeImage from "../../../components/RecipeImage";
+import RecipeBody from "../../../components/RecipeBody";
 
 let _cache = null;
 function getRecipeMap() {
@@ -71,12 +72,6 @@ export default async function RecipePage({ params }) {
             total
           </div>
         ) : null}
-        {recipe.yield ? (
-          <div className="stat">
-            <strong>{recipe.yield}</strong>
-            serves
-          </div>
-        ) : null}
       </div>
 
       <div className="chip-row" style={{ margin: "6px 0 0" }}>
@@ -88,24 +83,7 @@ export default async function RecipePage({ params }) {
         {recipe.cuisine ? <span className="chip">{recipe.cuisine}</span> : null}
       </div>
 
-      <div className="recipe-layout">
-        <div>
-          <h2 className="section-title">Ingredients</h2>
-          <ul className="ingredient-list">
-            {recipe.ingredients.map((ing, i) => (
-              <li key={i}>{ing}</li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h2 className="section-title">Method</h2>
-          <ol className="step-list">
-            {recipe.instructions.map((step, i) => (
-              <li key={i}>{step}</li>
-            ))}
-          </ol>
-        </div>
-      </div>
+      <RecipeBody recipe={recipe} />
 
       <p className="footer-note">
         Source:{" "}
