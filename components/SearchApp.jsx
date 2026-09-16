@@ -85,6 +85,13 @@ export default function SearchApp() {
     if (!q) return [];
     return allIngredients
       .filter((i) => i.includes(q) && !selectedIngredients.includes(i))
+      .sort(
+        (a, b) =>
+          (a === q ? 0 : a.startsWith(q) ? 1 : 2) -
+            (b === q ? 0 : b.startsWith(q) ? 1 : 2) ||
+          a.length - b.length ||
+          a.localeCompare(b),
+      )
       .slice(0, 8);
   }, [ingredientInput, allIngredients, selectedIngredients]);
 
