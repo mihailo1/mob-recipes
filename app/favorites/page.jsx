@@ -24,7 +24,8 @@ export default function FavoritesPage() {
   return (
     <div className="container">
       <header className="header">
-        <h1>Favorites</h1>
+        <span className="eyebrow">YOUR PERSONAL COOKBOOK</span>
+        <h1>Saved for a good day.</h1>
         <p>Recipes you&apos;ve saved for later.</p>
       </header>
 

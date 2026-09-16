@@ -2,12 +2,17 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Fuse from "fuse.js";
+import Link from "next/link";
+import RecipeImage from "./RecipeImage";
 import RecipeCard from "./RecipeCard";
 
 const PAGE_SIZE = 40;
 
 export default function SearchApp() {
   const [recipes, setRecipes] = useState(null);
+  const [quick, setQuick] = useState(false);
+  const [sort, setSort] = useState("default");
+  const [error, setError] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [cuisine, setCuisine] = useState("");
@@ -20,14 +25,23 @@ export default function SearchApp() {
 
   useEffect(() => {
     fetch("/search-index.json")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
       .then(setRecipes)
-      .catch(() => setRecipes([]));
+      .catch(() => {
+        setError(true);
+        setRecipes([]);
+      });
   }, []);
 
   useEffect(() => {
     function onClickOutside(e) {
-      if (ingredientBoxRef.current && !ingredientBoxRef.current.contains(e.target)) {
+      if (
+        ingredientBoxRef.current &&
+        !ingredientBoxRef.current.contains(e.target)
+      ) {
         setShowSuggestions(false);
       }
     }
@@ -51,7 +65,12 @@ export default function SearchApp() {
     const ings = new Set();
     for (const r of recipes) {
       (r.category || []).forEach((c) => cats.add(c));
-      if (r.cuisine) cuis.add(r.cuisine);
+      if (r.cuisine)
+        r.cuisine
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean)
+          .forEach((c) => cuis.add(c));
       (r.ingredientNames || []).forEach((i) => ings.add(i));
     }
     return {
@@ -75,23 +94,51 @@ export default function SearchApp() {
     if (query.trim() && fuse) {
       base = fuse.search(query.trim()).map((r) => r.item);
     }
-    return base.filter((r) => {
-      if (category && !(r.category || []).includes(category)) return false;
-      if (cuisine && r.cuisine !== cuisine) return false;
-      if (selectedIngredients.length) {
-        const have = new Set(r.ingredientNames || []);
-        if (!selectedIngredients.every((ing) => have.has(ing))) return false;
-      }
-      return true;
-    });
-  }, [recipes, query, fuse, category, cuisine, selectedIngredients]);
+    return base
+      .filter((r) => {
+        if (quick && (!r.totalTimeMinutes || r.totalTimeMinutes > 30))
+          return false;
+        if (category && !(r.category || []).includes(category)) return false;
+        if (
+          cuisine &&
+          !(r.cuisine || "")
+            .split(",")
+            .map((c) => c.trim())
+            .includes(cuisine)
+        )
+          return false;
+        if (selectedIngredients.length) {
+          const have = new Set(r.ingredientNames || []);
+          if (!selectedIngredients.every((ing) => have.has(ing))) return false;
+        }
+        return true;
+      })
+      .sort((a, b) =>
+        sort === "time"
+          ? (a.totalTimeMinutes || Infinity) - (b.totalTimeMinutes || Infinity)
+          : sort === "name"
+            ? a.name.localeCompare(b.name)
+            : 0,
+      );
+  }, [
+    recipes,
+    query,
+    fuse,
+    category,
+    cuisine,
+    selectedIngredients,
+    quick,
+    sort,
+  ]);
 
   useEffect(() => {
     setVisible(PAGE_SIZE);
-  }, [query, category, cuisine, selectedIngredients]);
+  }, [query, category, cuisine, selectedIngredients, quick, sort]);
 
   function addIngredient(ing) {
-    setSelectedIngredients((prev) => (prev.includes(ing) ? prev : [...prev, ing]));
+    setSelectedIngredients((prev) =>
+      prev.includes(ing) ? prev : [...prev, ing],
+    );
     setIngredientInput("");
     setShowSuggestions(false);
   }
@@ -101,88 +148,234 @@ export default function SearchApp() {
   }
 
   if (!recipes) {
-    return <p className="meta-row">Loading recipes…</p>;
+    return (
+      <div className="grid skeleton-grid" aria-label="Loading recipes">
+        {Array.from({ length: 8 }, (_, i) => (
+          <div key={i} className="skeleton-card img-frame" />
+        ))}
+      </div>
+    );
   }
 
+  if (error)
+    return (
+      <div className="empty">
+        <h2>Recipes couldn’t load</h2>
+        <button className="pill-btn" onClick={() => window.location.reload()}>
+          Try again
+        </button>
+      </div>
+    );
+  const active =
+    query || category || cuisine || quick || selectedIngredients.length > 0;
+  const featured = recipes.find(
+    (r) => r.image && r.totalTimeMinutes > 0 && r.totalTimeMinutes <= 30,
+  );
+  function reset() {
+    setQuery("");
+    setCategory("");
+    setCuisine("");
+    setQuick(false);
+    setSelectedIngredients([]);
+    setIngredientInput("");
+  }
   const shown = filtered.slice(0, visible);
 
   return (
     <>
-      <div className="controls">
-        <input
-          className="search-input"
-          type="search"
-          placeholder={`Search ${recipes.length.toLocaleString()} recipes…`}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <select value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="">All categories</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <select value={cuisine} onChange={(e) => setCuisine(e.target.value)}>
-          <option value="">All cuisines</option>
-          {cuisines.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="ingredient-filter" ref={ingredientBoxRef}>
-        <div className="ingredient-filter-input-row">
+      <header className="discovery-heading">
+        <span className="eyebrow">
+          A LITTLE INSPIRATION. A LOT OF GOOD FOOD.
+        </span>
+        <h1>What sounds good?</h1>
+        <p>Find your next favourite. Make dinner feel easy.</p>
+      </header>
+      {!active && featured && (
+        <section className="discovery-hero">
+          <div className="hero-copy">
+            <span className="eyebrow">THE WEEKNIGHT EDIT</span>
+            <h2>
+              Big flavour.
+              <br />
+              Little effort.
+            </h2>
+            <p>Your next great dinner is only 30 minutes away.</p>
+            <button
+              className="primary-btn"
+              onClick={() => {
+                setQuick(true);
+                setCategory("Dinner");
+              }}
+            >
+              Find a quick dinner <span>↗</span>
+            </button>
+          </div>
+          <Link className="hero-photo" href={`/recipes/${featured.slug}`}>
+            <RecipeImage
+              src={featured.image}
+              alt={featured.name}
+              priority
+              className="hero-image"
+            />
+            <div className="hero-caption">
+              <span>
+                {featured.totalTimeMinutes} MIN · TONIGHT’S INSPIRATION
+              </span>
+              <h3>{featured.name} ↗</h3>
+            </div>
+          </Link>
+        </section>
+      )}
+      <section className="search-panel" aria-label="Find recipes">
+        <div className="section-title-row">
+          <h2 className="section-title">Find your next cook</h2>
+          <span className="meta-row">
+            {recipes.length.toLocaleString()} recipes to explore
+          </span>
+        </div>
+        <div className="controls">
           <input
             className="search-input"
-            type="text"
-            placeholder="Filter by ingredients you want (e.g. chicken, lemon)…"
-            value={ingredientInput}
-            onChange={(e) => {
-              setIngredientInput(e.target.value);
-              setShowSuggestions(true);
-            }}
-            onFocus={() => setShowSuggestions(true)}
+            aria-label="Search recipes"
+            type="search"
+            placeholder={`Search ${recipes.length.toLocaleString()} recipes…`}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
           />
+          <select
+            aria-label="Category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Cuisine"
+            value={cuisine}
+            onChange={(e) => setCuisine(e.target.value)}
+          >
+            <option value="">All cuisines</option>
+            {cuisines.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </div>
-        {showSuggestions && ingredientSuggestions.length > 0 ? (
-          <div className="suggestion-list">
-            {ingredientSuggestions.map((ing) => (
+
+        <div className="ingredient-filter" ref={ingredientBoxRef}>
+          <div className="ingredient-filter-input-row">
+            <input
+              className="search-input"
+              aria-label="Filter by ingredients"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && ingredientSuggestions[0]) {
+                  e.preventDefault();
+                  addIngredient(ingredientSuggestions[0]);
+                }
+                if (e.key === "Escape") setShowSuggestions(false);
+              }}
+              type="text"
+              placeholder="Filter by ingredients you want (e.g. chicken, lemon)…"
+              value={ingredientInput}
+              onChange={(e) => {
+                setIngredientInput(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+            />
+          </div>
+          {showSuggestions && ingredientSuggestions.length > 0 ? (
+            <div className="suggestion-list">
+              {ingredientSuggestions.map((ing) => (
+                <button
+                  key={ing}
+                  type="button"
+                  className="suggestion-item"
+                  onClick={() => addIngredient(ing)}
+                >
+                  {ing}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {selectedIngredients.length > 0 ? (
+            <div className="chip-row" style={{ marginTop: 10 }}>
+              {selectedIngredients.map((ing) => (
+                <button
+                  key={ing}
+                  type="button"
+                  className="chip chip-removable"
+                  onClick={() => removeIngredient(ing)}
+                  title="Remove"
+                >
+                  {ing} ✕
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <p className="filter-help">
+          Use what you have: add multiple ingredients to find recipes containing
+          all of them.
+        </p>
+        <div className="quick-filters">
+          <button
+            className={`pill-btn ${quick ? "is-active" : ""}`}
+            aria-pressed={quick}
+            onClick={() => setQuick(!quick)}
+          >
+            ◷ 30 minutes or less
+          </button>
+          {["Vegan", "Veggie", "High-Protein", "One Pot Recipes", "Meal-Prep"]
+            .filter((c) => categories.includes(c))
+            .map((c) => (
               <button
-                key={ing}
-                type="button"
-                className="suggestion-item"
-                onClick={() => addIngredient(ing)}
+                key={c}
+                className={`pill-btn ${category === c ? "is-active" : ""}`}
+                aria-pressed={category === c}
+                onClick={() => setCategory(category === c ? "" : c)}
               >
-                {ing}
+                {c}
               </button>
             ))}
-          </div>
-        ) : null}
-        {selectedIngredients.length > 0 ? (
-          <div className="chip-row" style={{ marginTop: 10 }}>
-            {selectedIngredients.map((ing) => (
-              <button
-                key={ing}
-                type="button"
-                className="chip chip-removable"
-                onClick={() => removeIngredient(ing)}
-                title="Remove"
-              >
-                {ing} ✕
-              </button>
-            ))}
-          </div>
-        ) : null}
+          {active && (
+            <button className="text-btn" onClick={reset}>
+              Clear filters ×
+            </button>
+          )}
+        </div>
+      </section>
+      <div className="results-heading">
+        <h2>
+          {active ? "Your matches" : "A world of good food"}
+          <span>{filtered.length.toLocaleString()} recipes</span>
+        </h2>
+        <select
+          aria-label="Sort recipes"
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+        >
+          <option value="default">Default order</option>
+          <option value="time">Quickest first</option>
+          <option value="name">A–Z</option>
+        </select>
       </div>
 
-      <p className="meta-row">{filtered.length.toLocaleString()} recipes</p>
-
       {filtered.length === 0 ? (
-        <div className="empty">No recipes match that search.</div>
+        <div className="empty">
+          <h2>No matches just yet.</h2>
+          <p>Try fewer ingredients or broaden your filters.</p>
+          <button className="primary-btn" onClick={reset}>
+            Explore all recipes
+          </button>
+        </div>
       ) : (
         <div className="grid">
           {shown.map((r) => (
@@ -192,7 +385,10 @@ export default function SearchApp() {
       )}
 
       {visible < filtered.length ? (
-        <button className="load-more" onClick={() => setVisible((v) => v + PAGE_SIZE)}>
+        <button
+          className="load-more"
+          onClick={() => setVisible((v) => v + PAGE_SIZE)}
+        >
           Show more
         </button>
       ) : null}

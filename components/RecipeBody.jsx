@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   parseIngredientLine,
   formatIngredient,
@@ -10,10 +10,36 @@ import { useKitchen } from "../lib/store";
 
 export default function RecipeBody({ recipe }) {
   const { pool, favorites, togglePool, toggleFavorite } = useKitchen();
+  const [cooking, setCooking] = useState(false);
+  useEffect(() => {
+    if (!cooking || !navigator.wakeLock) return;
+    let lock;
+    let cancelled = false;
+    const acquire = async () => {
+      try {
+        const next = await navigator.wakeLock.request("screen");
+        if (cancelled) await next.release();
+        else lock = next;
+      } catch {}
+    };
+    const visible = () => {
+      if (document.visibilityState === "visible") acquire();
+    };
+    acquire();
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      cancelled = true;
+      lock?.release();
+      document.removeEventListener("visibilitychange", visible);
+    };
+  }, [cooking]);
   const inPool = pool.has(recipe.slug);
   const isFav = favorites.has(recipe.slug);
 
-  const baseYield = typeof recipe.yield === "number" ? recipe.yield : Number(recipe.yield) || null;
+  const baseYield =
+    typeof recipe.yield === "number"
+      ? recipe.yield
+      : Number(recipe.yield) || null;
   const [servings, setServings] = useState(baseYield || 1);
 
   const factor = baseYield ? servings / baseYield : 1;
@@ -27,12 +53,15 @@ export default function RecipeBody({ recipe }) {
           quantity: parsed.quantity != null ? parsed.quantity * factor : null,
         };
       }),
-    [recipe.ingredients, factor]
+    [recipe.ingredients, factor],
   );
 
   const stepSegments = useMemo(
-    () => recipe.instructions.map((step) => findIngredientMentions(step, scaledIngredients)),
-    [recipe.instructions, scaledIngredients]
+    () =>
+      recipe.instructions.map((step) =>
+        findIngredientMentions(step, scaledIngredients),
+      ),
+    [recipe.instructions, scaledIngredients],
   );
 
   return (
@@ -50,11 +79,18 @@ export default function RecipeBody({ recipe }) {
           className={`pill-btn ${inPool ? "is-active" : ""}`}
           onClick={() => togglePool(recipe.slug)}
         >
-          {inPool ? "✓ In pool" : "+ Add to pool"}
+          {inPool ? "✓ In your kitchen" : "+ Add to shopping list"}
+        </button>
+        <button
+          className="pill-btn cook-toggle"
+          aria-pressed={cooking}
+          onClick={() => setCooking(!cooking)}
+        >
+          {cooking ? "Exit cooking view" : "Start cooking ↗"}
         </button>
       </div>
 
-      <div className="recipe-layout">
+      <div className={`recipe-layout ${cooking ? "cooking" : ""}`}>
         <div>
           <div className="section-title-row">
             <h2 className="section-title">Ingredients</h2>
@@ -67,7 +103,9 @@ export default function RecipeBody({ recipe }) {
                 >
                   −
                 </button>
-                <span>{servings} serving{servings === 1 ? "" : "s"}</span>
+                <span>
+                  {servings} serving{servings === 1 ? "" : "s"}
+                </span>
                 <button
                   type="button"
                   onClick={() => setServings((s) => s + 1)}
@@ -80,25 +118,49 @@ export default function RecipeBody({ recipe }) {
           </div>
           <ul className="ingredient-list">
             {scaledIngredients.map((ing, i) => (
-              <li key={i}>{formatIngredient(ing)}</li>
+              <li key={i}>
+                <label>
+                  <input type="checkbox" />
+                  <span>{formatIngredient(ing)}</span>
+                </label>
+              </li>
             ))}
           </ul>
         </div>
         <div>
           <h2 className="section-title">Method</h2>
+          <p className="cook-progress">
+            {stepSegments.length} steps · Ingredients below each step show
+            recipe totals for {servings} serving{servings === 1 ? "" : "s"}.
+          </p>
           <ol className="step-list">
             {stepSegments.map((segments, i) => (
               <li key={i}>
                 <span>
                   {segments.map((seg, j) =>
                     seg.match ? (
-                      <mark key={j} title={seg.tooltip || undefined} className="ingredient-mark">
+                      <mark
+                        key={j}
+                        title={seg.tooltip || undefined}
+                        className="ingredient-mark"
+                      >
                         {seg.text}
                       </mark>
                     ) : (
                       <span key={j}>{seg.text}</span>
-                    )
+                    ),
                   )}
+                  <span className="step-ingredients">
+                    {[
+                      ...new Set(
+                        segments
+                          .filter((s) => s.match && s.tooltip)
+                          .map((s) => `${s.tooltip} ${s.text}`),
+                      ),
+                    ].map((t) => (
+                      <small key={t}>{t}</small>
+                    ))}
+                  </span>
                 </span>
               </li>
             ))}

@@ -17,7 +17,10 @@ function loadChecked() {
 
 function saveChecked(set) {
   try {
-    window.localStorage.setItem("mob-recipes:pool-checked", JSON.stringify([...set]));
+    window.localStorage.setItem(
+      "mob-recipes:pool-checked",
+      JSON.stringify([...set]),
+    );
   } catch {
     // ignore
   }
@@ -25,6 +28,8 @@ function saveChecked(set) {
 
 export default function PoolPage() {
   const { pool, togglePool, clearPool, ready } = useKitchen();
+  const [view, setView] = useState("all");
+  const [copyStatus, setCopyStatus] = useState("");
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checked, setChecked] = useState(() => new Set());
@@ -41,17 +46,22 @@ export default function PoolPage() {
       setLoading(false);
       return;
     }
+    let cancelled = false;
     setLoading(true);
     Promise.all(
       slugs.map((slug) =>
         fetch(`/api/recipe/${slug}`)
           .then((r) => (r.ok ? r.json() : null))
-          .catch(() => null)
-      )
+          .catch(() => null),
+      ),
     ).then((results) => {
+      if (cancelled) return;
       setRecipes(results.filter(Boolean));
       setLoading(false);
     });
+    return () => {
+      cancelled = true;
+    };
   }, [pool, ready]);
 
   const shoppingList = useMemo(() => aggregateIngredients(recipes), [recipes]);
@@ -68,7 +78,7 @@ export default function PoolPage() {
   return (
     <div className="container">
       <header className="header">
-        <h1>My Pool</h1>
+        <h1>My kitchen</h1>
         <p>
           Add recipes here to combine their ingredients into a single shopping
           list — quantities are summed automatically where the units match.
@@ -79,7 +89,7 @@ export default function PoolPage() {
         <p className="meta-row">Loading…</p>
       ) : recipes.length === 0 ? (
         <div className="empty">
-          Your pool is empty. Head to{" "}
+          Dinner starts here. Your kitchen is empty. Head to{" "}
           <Link href="/" className="back-link" style={{ display: "inline" }}>
             search
           </Link>{" "}
@@ -87,24 +97,47 @@ export default function PoolPage() {
         </div>
       ) : (
         <>
-          <div className="pool-layout">
+          <div className="pool-tabs">
+            {[
+              ["all", "Overview"],
+              ["recipes", "Recipes"],
+              ["shopping", "Shopping list"],
+            ].map(([id, label]) => (
+              <button
+                className="pill-btn"
+                aria-pressed={view === id}
+                key={id}
+                onClick={() => setView(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="pool-layout" data-view={view}>
             <div>
               <div className="section-title-row">
                 <h2 className="section-title">Recipes ({recipes.length})</h2>
                 <button className="text-btn" onClick={clearPool}>
-                  Clear pool
+                  Clear recipes
                 </button>
               </div>
               <div className="pool-recipe-list">
                 {recipes.map((r) => (
                   <div className="pool-recipe-item" key={r.slug}>
-                    <RecipeImage className="pool-thumb" src={r.image} alt={r.name} />
-                    <Link href={`/recipes/${r.slug}`} className="pool-recipe-name">
+                    <RecipeImage
+                      className="pool-thumb"
+                      src={r.image}
+                      alt={r.name}
+                    />
+                    <Link
+                      href={`/recipes/${r.slug}`}
+                      className="pool-recipe-name"
+                    >
                       {r.name}
                     </Link>
                     <button
                       className="icon-btn"
-                      aria-label="Remove from pool"
+                      aria-label="Remove from shopping list"
                       onClick={() => togglePool(r.slug)}
                     >
                       ✕
@@ -115,7 +148,52 @@ export default function PoolPage() {
             </div>
 
             <div>
-              <h2 className="section-title">Shopping list ({shoppingList.length})</h2>
+              <h2 className="section-title">
+                Shopping list ({shoppingList.length})
+              </h2>
+              <p className="meta-row">
+                {
+                  shoppingList.filter((i) =>
+                    checked.has(`${i.name}::${i.unit || ""}`),
+                  ).length
+                }{" "}
+                of {shoppingList.length} items in your basket
+              </p>
+              <progress
+                className="progress-bar"
+                aria-label="Shopping progress"
+                value={
+                  shoppingList.filter((i) =>
+                    checked.has(`${i.name}::${i.unit || ""}`),
+                  ).length
+                }
+                max={shoppingList.length || 1}
+              />
+              <button
+                className="pill-btn"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(
+                      shoppingList
+                        .filter(
+                          (i) => !checked.has(`${i.name}::${i.unit || ""}`),
+                        )
+                        .map((i) => i.label)
+                        .join("\n"),
+                    );
+                    setCopyStatus("Copied!");
+                  } catch {
+                    setCopyStatus(
+                      "Couldn’t copy. Please select the list text.",
+                    );
+                  }
+                }}
+              >
+                Copy remaining items
+              </button>
+              <p role="status" className="meta-row">
+                {copyStatus}
+              </p>
               <ul className="shopping-list">
                 {shoppingList.map((item) => {
                   const key = `${item.name}::${item.unit || ""}`;
@@ -142,8 +220,8 @@ export default function PoolPage() {
             </div>
           </div>
           <p className="footer-note">
-            Quantities are combined by matching ingredient name + unit exactly
-            — differently-worded duplicates (e.g. &quot;Fresh Dill&quot; vs
+            Quantities are combined by matching ingredient name + unit exactly —
+            differently-worded duplicates (e.g. &quot;Fresh Dill&quot; vs
             &quot;Dill&quot;) may still show as separate lines.
           </p>
         </>

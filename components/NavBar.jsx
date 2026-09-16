@@ -12,7 +12,12 @@ export default function NavBar() {
   const [rolling, setRolling] = useState(false);
 
   const link = (href, label, count) => (
-    <Link key={href} href={href} className={`nav-link ${pathname === href ? "active" : ""}`}>
+    <Link
+      key={href}
+      href={href}
+      aria-current={pathname === href ? "page" : undefined}
+      className={`nav-link ${pathname === href ? "active" : ""}`}
+    >
       {label}
       {count > 0 ? <span className="nav-badge">{count}</span> : null}
     </Link>
@@ -33,12 +38,20 @@ export default function NavBar() {
   return (
     <nav className="nav-row">
       <div className="container nav-inner">
+        <Link href="/" className="brand">
+          mob<span> / my kitchen</span>
+        </Link>
         <div className="nav-links">
-          {link("/", "Search")}
-          {link("/pool", "Pool", pool.size)}
-          {link("/favorites", "Favorites", favorites.size)}
+          {link("/", "Discover")}
+          {link("/pool", "My kitchen", pool.size)}
+          {link("/favorites", "Saved", favorites.size)}
         </div>
-        <button type="button" className="text-btn" onClick={surpriseMe} disabled={rolling}>
+        <button
+          type="button"
+          className="text-btn"
+          onClick={surpriseMe}
+          disabled={rolling}
+        >
           🎲 Surprise me
         </button>
       </div>

@@ -25,7 +25,7 @@ export default function RecipeCard({ recipe }) {
         </button>
         <button
           type="button"
-          aria-label={inPool ? "Remove from pool" : "Add to pool"}
+          aria-label={inPool ? "Remove from shopping list" : "Add to shopping list"}
           className={`icon-btn ${inPool ? "is-active" : ""}`}
           onClick={() => togglePool(recipe.slug)}
         >

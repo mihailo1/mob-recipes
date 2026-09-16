@@ -9,10 +9,13 @@ export default function RecipeImage({
   priority = false,
 }) {
   const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   return (
-    <div className={`img-frame ${loaded ? "is-loaded" : ""} ${className}`}>
-      {src ? (
+    <div
+      className={`img-frame ${loaded || failed || !src ? "is-loaded" : ""} ${className}`}
+    >
+      {src && !failed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
@@ -21,8 +24,11 @@ export default function RecipeImage({
           fetchPriority={priority ? "high" : "auto"}
           decoding="async"
           onLoad={() => setLoaded(true)}
+          onError={() => setFailed(true)}
         />
-      ) : null}
+      ) : (
+        <span className="image-fallback">Photo unavailable</span>
+      )}
     </div>
   );
 }
