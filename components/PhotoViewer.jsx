@@ -242,12 +242,6 @@ function Viewer({ src, alt, onClose, returnFocusTo }) {
     else commit(zoomAround(v, DOUBLE_TAP_SCALE, local(e)));
   };
 
-  const onWheel = (e) => {
-    const v = viewRef.current;
-    const s = clamp(v.s * Math.exp(-e.deltaY * 0.002), MIN_SCALE, MAX_SCALE);
-    commit(zoomAround(v, s, local(e)));
-  };
-
   // Lock page scroll, focus the close button, handle Escape and Tab.
   useEffect(() => {
     const html = document.documentElement;
@@ -291,6 +285,24 @@ function Viewer({ src, alt, onClose, returnFocusTo }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Wheel / trackpad pinch (ctrl+wheel). React's onWheel is passive, so the
+  // browser would also zoom the page; a native non-passive listener can cancel.
+  useEffect(() => {
+    const root = rootRef.current;
+    const onWheel = (e) => {
+      e.preventDefault();
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1;
+      const dy = e.deltaY * unit;
+      const v = viewRef.current;
+      const s = clamp(v.s * Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.002)), MIN_SCALE, MAX_SCALE);
+      setAnimate(false);
+      commit(zoomAround(v, s, local(e)));
+    };
+    root.addEventListener("wheel", onWheel, { passive: false });
+    return () => root.removeEventListener("wheel", onWheel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Images that finished loading before React attached onLoad (cache hits).
   useEffect(() => {
     const low = lowRef.current;
@@ -323,7 +335,6 @@ function Viewer({ src, alt, onClose, returnFocusTo }) {
         onPointerMove={onPointerMove}
         onPointerUp={(e) => finish(e, false)}
         onPointerCancel={(e) => finish(e, true)}
-        onWheel={onWheel}
       >
         <div
           className={`pv-content ${animate ? "is-animating" : ""}`}

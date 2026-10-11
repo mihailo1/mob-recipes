@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useKitchen } from "../lib/store";
+import { optimized } from "./RecipeImage";
 
 // Floating "resume current recipe" chip (mini-player style). It is fixed
 // positioned above the tab bar, so it never changes the bar's layout or height.
@@ -12,6 +13,8 @@ import { useKitchen } from "../lib/store";
 export default function ResumeChip() {
   const pathname = usePathname();
   const { lastRecipe, clearLastRecipe, ready } = useKitchen();
+  // Source url that failed to load; compared by value so a new recipe retries.
+  const [failedSrc, setFailedSrc] = useState(null);
 
   const visible =
     ready && !!lastRecipe && pathname !== `/recipes/${lastRecipe.slug}`;
@@ -28,16 +31,17 @@ export default function ResumeChip() {
   return (
     <div className="nb-resume" key={lastRecipe.slug} role="region" aria-label="Resume recipe">
       <Link href={`/recipes/${lastRecipe.slug}`} className="nb-resume-main">
-        {lastRecipe.image ? (
+        {lastRecipe.image && failedSrc !== lastRecipe.image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             className="nb-resume-thumb"
-            src={lastRecipe.image}
+            src={optimized(lastRecipe.image, 256, 70)}
             alt=""
             width={40}
             height={40}
             loading="lazy"
             decoding="async"
+            onError={() => setFailedSrc(lastRecipe.image)}
           />
         ) : (
           <span className="nb-resume-thumb nb-resume-thumb-empty" aria-hidden="true" />

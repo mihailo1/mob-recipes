@@ -9,11 +9,17 @@ const QUALITY = 70;
 const PREVIEW_WIDTH = 16;
 const PREVIEW_QUALITY = 30;
 
-const CARD_SIZES = "(min-width: 900px) 360px, (min-width: 560px) 45vw, 100vw";
+// Mirrors the .grid CSS in app/globals.css (container padding + column gaps):
+//   >= 1240px  4 columns, content capped at 1176px   -> ~279px per card
+//   951-1239   4 columns, gap 20, padding 32         -> (100vw - 124px) / 4
+//   721-950    3 columns, gap 20, padding 32         -> (100vw - 104px) / 3
+//   <= 720     2 columns, gap 14, padding 16 (14 <= 480) -> (100vw - 46px) / 2
+const CARD_SIZES =
+  "(min-width: 1240px) 280px, (min-width: 951px) 24vw, (min-width: 721px) 31vw, calc(50vw - 23px)";
 const HERO_SIZES = "(min-width: 1240px) 1176px, 100vw";
 const THUMB_SIZES = "76px";
 
-const optimized = (src, w, q) =>
+export const optimized = (src, w, q) =>
   `/_next/image?url=${encodeURIComponent(src)}&w=${w}&q=${q}`;
 
 function defaultSizes(className) {

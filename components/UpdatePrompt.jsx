@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { acceptUpdate, postponeUpdate, useNotices } from "../lib/notices";
 import { shortVersion } from "../lib/version";
+
+const UPDATE_TIMEOUT_MS = 6000;
 
 // Small non-blocking banner shown while a new service worker is waiting.
 // Nothing happens until the user taps "Update"; "Later" hides it until the
@@ -11,6 +13,19 @@ import { shortVersion } from "../lib/version";
 export default function UpdatePrompt() {
   const { update } = useNotices();
   const [busy, setBusy] = useState(false);
+  const [stalled, setStalled] = useState(false);
+
+  // If the new worker never takes over (no controllerchange), stop spinning
+  // and let the user try again.
+  useEffect(() => {
+    if (!busy) return undefined;
+    const t = setTimeout(() => {
+      setBusy(false);
+      setStalled(true);
+    }, UPDATE_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, [busy]);
+
   if (!update) return null;
 
   const label = update.version
@@ -29,10 +44,13 @@ export default function UpdatePrompt() {
           className="upd-btn upd-btn-primary"
           disabled={busy}
           onClick={() => {
-            if (acceptUpdate()) setBusy(true);
+            if (acceptUpdate()) {
+              setStalled(false);
+              setBusy(true);
+            }
           }}
         >
-          {busy ? "Updating…" : "Update"}
+          {busy ? "Updating…" : stalled ? "Try again" : "Update"}
         </button>
       </div>
     </div>

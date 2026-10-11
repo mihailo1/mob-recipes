@@ -55,6 +55,9 @@ export default function TimeRange({ filterState, recipes }) {
 
   const draftRef = useRef(null);
   const draggingRef = useRef(false);
+  // Set when a drag starts with both thumbs on one value: the grabbed thumb
+  // then moves freely either way around that value.
+  const anchorRef = useRef(null);
   const timerRef = useRef(null);
   const latest = useRef({ setFilters, steps });
   useEffect(() => {
@@ -75,6 +78,16 @@ export default function TimeRange({ filterState, recipes }) {
     setDraft(null);
   }
 
+  // Value change from either input. With an anchor (drag started on stacked
+  // thumbs) the range spans anchor..value, so dragging left or right both work.
+  function onThumbChange(which, raw) {
+    const v = Number(raw);
+    const a = anchorRef.current;
+    if (a != null) update({ lo: Math.min(a, v), hi: Math.max(a, v) });
+    else if (which === "lo") update({ lo: Math.min(v, hi), hi });
+    else update({ lo, hi: Math.max(v, lo) });
+  }
+
   function update(next) {
     draftRef.current = next;
     setDraft(next);
@@ -86,8 +99,10 @@ export default function TimeRange({ filterState, recipes }) {
 
   function onPointerDown() {
     draggingRef.current = true;
+    anchorRef.current = lo === hi ? lo : null;
     const end = () => {
       draggingRef.current = false;
+      anchorRef.current = null;
       window.removeEventListener("pointerup", end);
       window.removeEventListener("pointercancel", end);
       commit();
@@ -152,7 +167,7 @@ export default function TimeRange({ filterState, recipes }) {
           aria-valuetext={lo === 0 ? "No minimum" : stepText(steps, lo)}
           style={{ zIndex: loOnTop ? 3 : 2 }}
           onPointerDown={onPointerDown}
-          onChange={(e) => update({ lo: Math.min(Number(e.target.value), hi), hi })}
+          onChange={(e) => onThumbChange("lo", e.target.value)}
           onKeyUp={commit}
           onBlur={commit}
         />
@@ -167,7 +182,7 @@ export default function TimeRange({ filterState, recipes }) {
           aria-valuetext={hi >= last ? "No maximum" : stepText(steps, hi)}
           style={{ zIndex: 2 }}
           onPointerDown={onPointerDown}
-          onChange={(e) => update({ lo, hi: Math.max(Number(e.target.value), lo) })}
+          onChange={(e) => onThumbChange("hi", e.target.value)}
           onKeyUp={commit}
           onBlur={commit}
         />

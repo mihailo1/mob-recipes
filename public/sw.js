@@ -19,6 +19,8 @@ const CACHES = {
   static: `${PREFIX}static-v1`,
   thumbs: `${PREFIX}thumbs-v1`,
   photos: `${PREFIX}photos-v1`,
+  // Not tied to VERSION: survives activate cleanup; also re-put on every install.
+  offline: `${PREFIX}offline-v1`,
 };
 const LIMITS = {
   [CACHES.static]: 300,
@@ -29,6 +31,7 @@ const LIMITS = {
 };
 const CDN_HOST = "mob-cdn.ams3.digitaloceanspaces.com";
 const OFFLINE_URL = "/";
+const OFFLINE_PAGE = "/offline.html";
 const PRECACHE_REQUIRED = [OFFLINE_URL];
 const PRECACHE_OPTIONAL = ["/pool", "/favorites", "/search-index.json"];
 const NAV_TIMEOUT_MS = 3000;
@@ -38,6 +41,9 @@ self.addEventListener("install", (event) => {
     (async () => {
       const pages = await caches.open(CACHES.pages);
       await pages.addAll(PRECACHE_REQUIRED);
+      await (await caches.open(CACHES.offline)).addAll([
+        new Request(OFFLINE_PAGE, { cache: "reload" }),
+      ]);
       await Promise.all(
         PRECACHE_OPTIONAL.map(async (url) => {
           try {
@@ -178,8 +184,9 @@ async function staleWhileRevalidate(event, cacheName) {
   const { request } = event;
   const cache = await caches.open(cacheName);
   const hit = await cache.match(request, { ignoreVary: true });
-  const network = fetch(request).then(async (res) => {
-    if (isCacheable(res)) await put(cacheName, request, res.clone());
+  const network = fetch(request).then((res) => {
+    // Return at once; storing the body must not hold back the response.
+    if (isCacheable(res)) event.waitUntil(put(cacheName, request, res.clone()));
     return res;
   });
   if (hit) {
@@ -196,7 +203,7 @@ async function networkFirstPage(event) {
   const network = (async () => {
     const preloaded = await event.preloadResponse;
     const res = preloaded || (await fetch(request));
-    if (isCacheable(res)) await put(CACHES.pages, request, res.clone());
+    if (isCacheable(res)) event.waitUntil(put(CACHES.pages, request, res.clone()));
     return res;
   })();
   event.waitUntil(network.catch(() => {}));
@@ -221,7 +228,10 @@ async function networkFirstPage(event) {
   } catch {
     const cached = await fromCache();
     if (cached) return cached;
-    const offline = await cache.match(OFFLINE_URL);
+    // Never serve "/" HTML at another URL (Next would see a mismatched route
+    // and can loop). The home page itself is matched by fromCache above.
+    const offlineCache = await caches.open(CACHES.offline);
+    const offline = await offlineCache.match(OFFLINE_PAGE);
     if (offline) return offline;
     return new Response("You are offline.", {
       status: 503,
