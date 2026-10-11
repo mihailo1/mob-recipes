@@ -4,7 +4,7 @@
 // for all recipes just to let someone search by name/category/cuisine.
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { normalizeIngredientName } from "../lib/ingredients.mjs";
+import { normalizeIngredient } from "../lib/ingredients.mjs";
 
 async function main() {
   let recipes = [];
@@ -23,8 +23,10 @@ async function main() {
     totalTimeMinutes: r.totalTimeMinutes,
     keywords: (r.keywords || []).slice(0, 6).join(" "),
     isAccessibleForFree: r.isAccessibleForFree,
+    // Canonical ingredient names (lowercase, singular, UK spelling, synonyms
+    // collapsed). Match with recipeMatchesIngredients() from lib/ingredients.mjs.
     ingredientNames: [
-      ...new Set((r.ingredients || []).map(normalizeIngredientName).filter(Boolean)),
+      ...new Set((r.ingredients || []).map(normalizeIngredient).filter(Boolean)),
     ],
   }));
 

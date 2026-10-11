@@ -1,0 +1,213 @@
+/* Mob Recipes service worker. Hand written, no build step.
+ *
+ * Bump VERSION to drop cached HTML and JSON (e.g. after changing routes).
+ * Image and static caches have their own names so a bump does not throw away
+ * hundreds of downloaded photos or immutable hashed chunks.
+ */
+const VERSION = "v1";
+const PREFIX = "mob-";
+const CACHES = {
+  pages: `${PREFIX}pages-${VERSION}`,
+  data: `${PREFIX}data-${VERSION}`,
+  static: `${PREFIX}static-v1`,
+  thumbs: `${PREFIX}thumbs-v1`,
+  photos: `${PREFIX}photos-v1`,
+};
+const LIMITS = {
+  [CACHES.static]: 300,
+  [CACHES.thumbs]: 400, // /_next/image output, small
+  [CACHES.photos]: 80, // CDN originals are ~1MB each, keep iOS storage sane
+  [CACHES.pages]: 60,
+  [CACHES.data]: 200,
+};
+const CDN_HOST = "mob-cdn.ams3.digitaloceanspaces.com";
+const OFFLINE_URL = "/";
+const PRECACHE_REQUIRED = [OFFLINE_URL];
+const PRECACHE_OPTIONAL = ["/pool", "/favorites", "/search-index.json"];
+const NAV_TIMEOUT_MS = 3000;
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    (async () => {
+      const pages = await caches.open(CACHES.pages);
+      await pages.addAll(PRECACHE_REQUIRED);
+      await Promise.all(
+        PRECACHE_OPTIONAL.map(async (url) => {
+          try {
+            const res = await fetch(url, { cache: "no-cache" });
+            if (isCacheable(res)) {
+              const name = url.endsWith(".json") ? CACHES.data : CACHES.pages;
+              await (await caches.open(name)).put(url, res);
+            }
+          } catch {
+            // Best effort: a missing optional entry must not block install.
+          }
+        }),
+      );
+      // Routing below does not depend on build output (HTML is network first,
+      // hashed assets are immutable), so taking over a live page is safe.
+      await self.skipWaiting();
+    })(),
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    (async () => {
+      const keep = new Set(Object.values(CACHES));
+      const names = await caches.keys();
+      await Promise.all(
+        names
+          .filter((n) => n.startsWith(PREFIX) && !keep.has(n))
+          .map((n) => caches.delete(n)),
+      );
+      if (self.registration.navigationPreload) {
+        await self.registration.navigationPreload.enable().catch(() => {});
+      }
+      await self.clients.claim();
+    })(),
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  if (request.method !== "GET") return;
+  if (request.cache === "only-if-cached" && request.mode !== "same-origin") return;
+  if (request.headers.has("range")) return;
+
+  const url = new URL(request.url);
+  const sameOrigin = url.origin === self.location.origin;
+
+  if (!sameOrigin) {
+    // Cross origin: only CORS image requests to the CDN. no-cors requests
+    // would give opaque responses, which we never store, so leave them alone.
+    if (url.hostname === CDN_HOST && request.mode === "cors") {
+      event.respondWith(cacheFirst(event, CACHES.photos));
+    }
+    return;
+  }
+
+  const path = url.pathname;
+  if (path === "/sw.js" || path.startsWith("/_next/webpack-hmr")) return;
+
+  if (path.startsWith("/_next/static/")) {
+    event.respondWith(cacheFirst(event, CACHES.static));
+    return;
+  }
+  if (path === "/_next/image" || path.startsWith("/_next/image/")) {
+    event.respondWith(cacheFirst(event, CACHES.thumbs));
+    return;
+  }
+  if (path === "/search-index.json" || path.startsWith("/api/recipe/")) {
+    event.respondWith(staleWhileRevalidate(event, CACHES.data));
+    return;
+  }
+  if (request.mode === "navigate") {
+    event.respondWith(networkFirstPage(event));
+    return;
+  }
+  // Everything else (RSC payloads for client side navigation, other API
+  // routes, public files) goes straight to the network. If an RSC fetch fails
+  // offline, Next falls back to a full navigation, which is handled above.
+});
+
+function isCacheable(res) {
+  return (
+    res &&
+    res.status === 200 &&
+    res.type !== "opaque" &&
+    res.type !== "opaqueredirect" &&
+    !res.redirected &&
+    !/no-store/i.test(res.headers.get("cache-control") || "")
+  );
+}
+
+async function put(cacheName, request, response) {
+  try {
+    const cache = await caches.open(cacheName);
+    await cache.put(request, response);
+    await trim(cacheName);
+  } catch {
+    // Quota errors etc.: caching is an optimisation, never fail the request.
+  }
+}
+
+const trimming = new Map();
+function trim(cacheName) {
+  const max = LIMITS[cacheName];
+  if (!max || trimming.has(cacheName)) return trimming.get(cacheName);
+  const job = (async () => {
+    const cache = await caches.open(cacheName);
+    const keys = await cache.keys(); // insertion order, oldest first
+    const excess = keys.length - max;
+    for (let i = 0; i < excess; i++) await cache.delete(keys[i]);
+  })().finally(() => trimming.delete(cacheName));
+  trimming.set(cacheName, job);
+  return job;
+}
+
+async function cacheFirst(event, cacheName) {
+  const { request } = event;
+  const cache = await caches.open(cacheName);
+  const hit = await cache.match(request);
+  if (hit) return hit;
+  const res = await fetch(request);
+  if (isCacheable(res)) event.waitUntil(put(cacheName, request, res.clone()));
+  return res;
+}
+
+async function staleWhileRevalidate(event, cacheName) {
+  const { request } = event;
+  const cache = await caches.open(cacheName);
+  const hit = await cache.match(request, { ignoreVary: true });
+  const network = fetch(request).then(async (res) => {
+    if (isCacheable(res)) await put(cacheName, request, res.clone());
+    return res;
+  });
+  if (hit) {
+    event.waitUntil(network.catch(() => {}));
+    return hit;
+  }
+  return network;
+}
+
+async function networkFirstPage(event) {
+  const { request } = event;
+  const cache = await caches.open(CACHES.pages);
+
+  const network = (async () => {
+    const preloaded = await event.preloadResponse;
+    const res = preloaded || (await fetch(request));
+    if (isCacheable(res)) await put(CACHES.pages, request, res.clone());
+    return res;
+  })();
+  event.waitUntil(network.catch(() => {}));
+
+  const fromCache = async () =>
+    (await cache.match(request)) ||
+    (await cache.match(request, { ignoreSearch: true })) ||
+    null;
+
+  // Race the network against a timeout. On timeout serve the cached copy if
+  // we have one (network keeps going and refreshes the cache); otherwise keep
+  // waiting for the network.
+  const timedOut = new Promise((resolve) =>
+    setTimeout(() => resolve("timeout"), NAV_TIMEOUT_MS),
+  );
+  try {
+    const first = await Promise.race([network, timedOut]);
+    if (first !== "timeout") return first;
+    const cached = await fromCache();
+    if (cached) return cached;
+    return await network;
+  } catch {
+    const cached = await fromCache();
+    if (cached) return cached;
+    const offline = await cache.match(OFFLINE_URL);
+    if (offline) return offline;
+    return new Response("You are offline.", {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+    });
+  }
+}

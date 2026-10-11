@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import RecipeImage from "../../../components/RecipeImage";
 import RecipeBody from "../../../components/RecipeBody";
+import TrackRecentRecipe from "../../../components/TrackRecentRecipe";
 
 let _cache = null;
 function getRecipeMap() {
@@ -39,6 +40,11 @@ export default async function RecipePage({ params }) {
 
   return (
     <div className="container">
+      <TrackRecentRecipe
+        slug={recipe.slug}
+        name={recipe.name}
+        image={recipe.image || ""}
+      />
       <Link href="/" className="back-link">
         ← Back to search
       </Link>
