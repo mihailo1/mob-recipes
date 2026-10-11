@@ -1,6 +1,7 @@
 "use client";
 
 import IngredientFilter from "./IngredientFilter";
+import { QUICK_MINUTES } from "../../lib/filters";
 
 const DEFAULT_QUICK_CATEGORIES = [
   "Vegan",
@@ -66,9 +67,13 @@ export default function SearchFilters({
     setQuery,
     flushQuery,
     setFilter,
+    setFilters,
     addIngredient,
     removeIngredient,
   } = filterState;
+  // "30 minutes or less" is a shortcut for the cook-time range 0..30.
+  const quickActive =
+    filters.minTime == null && filters.maxTime === QUICK_MINUTES;
 
   return (
     <>
@@ -120,16 +125,19 @@ export default function SearchFilters({
         all of them.
       </p>
 
-      {/* Cook-time range slider goes here (passed as children): read
-          filterState.filters.minTime/maxTime, write with
-          filterState.setFilters({ minTime, maxTime }). */}
+      {/* Extra controls, e.g. the cook-time range slider. */}
       {children}
 
       <div className="quick-filters">
         <button
-          className={`pill-btn ${filters.quick ? "is-active" : ""}`}
-          aria-pressed={filters.quick}
-          onClick={() => setFilter("quick", !filters.quick)}
+          className={`pill-btn ${quickActive ? "is-active" : ""}`}
+          aria-pressed={quickActive}
+          onClick={() =>
+            setFilters({
+              minTime: null,
+              maxTime: quickActive ? null : QUICK_MINUTES,
+            })
+          }
         >
           ◷ 30 minutes or less
         </button>

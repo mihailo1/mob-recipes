@@ -4,6 +4,8 @@ import NavBar from "../components/NavBar";
 import SWRegister from "../components/SWRegister";
 import IOSZoomGuard from "../components/IOSZoomGuard";
 import Providers from "../components/Providers";
+import AppNotices from "../components/AppNotices";
+import { APP_VERSION } from "../lib/version";
 
 export const metadata = {
   title: "Mob Recipes Archive",
@@ -46,6 +48,8 @@ export default function RootLayout({ children }) {
           <KitchenProvider>
             <NavBar />
             {children}
+            <p className="upd-version">Mob Recipes v{APP_VERSION}</p>
+            <AppNotices />
           </KitchenProvider>
         </Providers>
         <SWRegister />

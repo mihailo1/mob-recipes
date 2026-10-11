@@ -13,7 +13,8 @@ import {
   useRecipeFilters,
 } from "../lib/useRecipeFilters";
 import { useListRestoration } from "../lib/useListRestoration";
-import { DISCOVER_SORT_OPTIONS } from "../lib/filters";
+import { DISCOVER_SORT_OPTIONS, QUICK_MINUTES } from "../lib/filters";
+import TimeRange from "./filters/TimeRange";
 
 const PAGE_SIZE = 40;
 
@@ -97,7 +98,7 @@ export default function SearchApp() {
             <button
               className="primary-btn"
               onClick={() =>
-                filterState.setFilters({ quick: true, category: "Dinner" })
+                filterState.setFilters({ minTime: null, maxTime: QUICK_MINUTES, category: "Dinner" })
               }
             >
               Find a quick dinner <span>↗</span>
@@ -132,7 +133,9 @@ export default function SearchApp() {
           cuisines={facets.cuisines}
           vocabulary={vocabulary}
           recipeCount={recipes.length}
-        />
+        >
+          <TimeRange filterState={filterState} recipes={recipes} />
+        </SearchFilters>
       </section>
       <div className="results-heading">
         <h2>

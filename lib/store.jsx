@@ -5,8 +5,18 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useEffect,
   useSyncExternalStore,
 } from "react";
+import {
+  FAVORITES_KEY,
+  LAST_RECIPE_KEY,
+  POOL_KEY,
+  SCHEMA_KEY,
+  normalizeFavorites,
+  rescueUnreadable,
+  runMigrations,
+} from "./storage-migrations.mjs";
 
 /*
  * Client-side kitchen store (pool, favorites, last viewed recipe).
@@ -15,11 +25,10 @@ import {
  * read with useSyncExternalStore. During SSR and hydration React uses the
  * server snapshot (empty, ready: false), then switches to the real snapshot,
  * so there is no hydration mismatch and no setState-in-effect.
+ *
+ * Before the first read, storage is brought to the current schema by
+ * lib/storage-migrations.mjs (backup first, never drops unparsable data).
  */
-
-const POOL_KEY = "mob-recipes:pool";
-const FAVORITES_KEY = "mob-recipes:favorites";
-const LAST_RECIPE_KEY = "mob-recipes:last-recipe";
 
 const KitchenContext = createContext(null);
 
@@ -55,30 +64,16 @@ function loadPool() {
 }
 
 /*
- * Favorites are stored as [[slug, addedAt], ...] in insertion order.
- * Legacy format was a plain array of slugs (oldest first). Legacy entries get
- * synthetic, strictly increasing timestamps ending just before the migration
- * time, so their relative order is preserved when sorting by addedAt.
+ * Favorites are stored as [[slug, addedAt], ...] in insertion order. The
+ * legacy plain slug array is converted by the schema migration; normalizing
+ * here as well keeps the store safe if another tab of an old build writes the
+ * legacy shape again.
  */
 function loadFavorites() {
   const data = readJSON(FAVORITES_KEY);
-  const map = new Map();
-  if (!Array.isArray(data)) return { map, migrated: false };
-  const migratedAt = Date.now();
-  let migrated = false;
-  data.forEach((entry, i) => {
-    if (typeof entry === "string") {
-      migrated = true;
-      map.set(entry, migratedAt - (data.length - i));
-    } else if (
-      Array.isArray(entry) &&
-      typeof entry[0] === "string" &&
-      Number.isFinite(entry[1])
-    ) {
-      map.set(entry[0], entry[1]);
-    }
-  });
-  return { map, migrated };
+  const norm = normalizeFavorites(data, Date.now());
+  if (!norm) return { map: new Map(), migrated: false };
+  return { map: new Map(norm.entries), migrated: norm.changed };
 }
 
 function loadLastRecipe() {
@@ -100,7 +95,24 @@ function saveFavorites(map) {
   writeJSON(FAVORITES_KEY, [...map]);
 }
 
+let migrationsDone = false;
+function migrateOnce() {
+  if (migrationsDone) return;
+  migrationsDone = true;
+  try {
+    const storage = window.localStorage;
+    runMigrations(storage);
+    // Anything the app cannot read gets a raw copy before it can be overwritten.
+    rescueUnreadable(storage, FAVORITES_KEY, Array.isArray);
+    rescueUnreadable(storage, POOL_KEY, Array.isArray);
+    rescueUnreadable(storage, LAST_RECIPE_KEY, (v) => typeof v === "object");
+  } catch {
+    // storage unavailable: nothing to migrate
+  }
+}
+
 function readAll() {
+  migrateOnce();
   const { map, migrated } = loadFavorites();
   if (migrated) saveFavorites(map);
   return {
@@ -129,6 +141,7 @@ function subscribe(listener) {
   const onStorage = (e) => {
     if (
       e.key === null ||
+      e.key === SCHEMA_KEY ||
       e.key === POOL_KEY ||
       e.key === FAVORITES_KEY ||
       e.key === LAST_RECIPE_KEY
@@ -191,8 +204,27 @@ function clearLastRecipe() {
   setLastRecipe(null);
 }
 
+let persistAsked = false;
+// Best effort: ask the browser not to evict our storage under pressure.
+// Skipped on Firefox, where persist() shows a permission prompt.
+function requestPersistentStorage() {
+  if (persistAsked) return;
+  persistAsked = true;
+  try {
+    const storage = navigator.storage;
+    if (!storage?.persist || /firefox/i.test(navigator.userAgent)) return;
+    Promise.resolve(storage.persisted?.())
+      .then((already) => (already ? true : storage.persist()))
+      .catch(() => {});
+  } catch {
+    // ignore
+  }
+}
+
 export function KitchenProvider({ children }) {
   const snap = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+  useEffect(requestPersistentStorage, []);
 
   const favoriteAddedAt = useCallback(
     (slug) => snap.favorites.get(slug) ?? null,

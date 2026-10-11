@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import RecipeImage from "../../../components/RecipeImage";
+import PhotoViewer from "../../../components/PhotoViewer";
 import RecipeBody from "../../../components/RecipeBody";
 import TrackRecentRecipe from "../../../components/TrackRecentRecipe";
 
@@ -49,12 +49,7 @@ export default async function RecipePage({ params }) {
         ← Back to search
       </Link>
 
-      <RecipeImage
-        className="recipe-hero"
-        src={recipe.image}
-        alt={recipe.name}
-        priority
-      />
+      <PhotoViewer src={recipe.image} alt={recipe.name} />
 
       <h1 className="recipe-title">{recipe.name}</h1>
       {recipe.description ? (

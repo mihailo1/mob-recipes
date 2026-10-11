@@ -1,5 +1,25 @@
+import { readFileSync } from "node:fs";
+
+// Single source of truth for the app version: package.json. public/sw.js has
+// no build step, so it repeats the version in `const VERSION`; a mismatch
+// fails the build (a stale SW version would never trigger the update prompt).
+const APP_VERSION = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf8"),
+).version;
+const SW_VERSION = readFileSync(new URL("./public/sw.js", import.meta.url), "utf8").match(
+  /const VERSION = "([^"]+)"/,
+)?.[1];
+if (SW_VERSION !== APP_VERSION) {
+  const msg = `public/sw.js VERSION (${SW_VERSION}) must equal package.json version (${APP_VERSION})`;
+  if (process.env.NODE_ENV === "production") throw new Error(msg);
+  console.warn(`Warning: ${msg}`);
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: APP_VERSION,
+  },
   // data/recipes.json is read at runtime via fs.readFileSync (dynamic path),
   // so Next's file tracer won't pick it up on its own — the serverless
   // function for /api/recipe/[slug] would 404 in production without this.

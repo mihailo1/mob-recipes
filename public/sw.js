@@ -1,10 +1,17 @@
 /* Mob Recipes service worker. Hand written, no build step.
  *
- * Bump VERSION to drop cached HTML and JSON (e.g. after changing routes).
- * Image and static caches have their own names so a bump does not throw away
- * hundreds of downloaded photos or immutable hashed chunks.
+ * VERSION must equal "version" in package.json (next.config.mjs fails the
+ * build otherwise). Bump both together on every release: a changed sw.js is
+ * what makes the browser install a new worker and the app show "Update".
+ * A bump also drops cached HTML and JSON. Image and static caches have their
+ * own names so a bump does not throw away downloaded photos or hashed chunks.
+ *
+ * Lifecycle: the very first install activates at once (nothing to replace).
+ * Later versions install and WAIT until the user taps "Update" in the app,
+ * which posts {type: "SKIP_WAITING"}. User data lives in localStorage, which
+ * the worker never touches.
  */
-const VERSION = "v1";
+const VERSION = "0.3.0";
 const PREFIX = "mob-";
 const CACHES = {
   pages: `${PREFIX}pages-${VERSION}`,
@@ -44,11 +51,22 @@ self.addEventListener("install", (event) => {
           }
         }),
       );
-      // Routing below does not depend on build output (HTML is network first,
-      // hashed assets are immutable), so taking over a live page is safe.
-      await self.skipWaiting();
+      // First install only: no previous worker, so nothing to wait for.
+      // Updates stay in "waiting" until the user accepts them.
+      if (!self.registration.active) await self.skipWaiting();
     })(),
   );
+});
+
+self.addEventListener("message", (event) => {
+  const type = event.data && event.data.type;
+  if (type === "SKIP_WAITING") {
+    self.skipWaiting();
+  } else if (type === "GET_VERSION") {
+    const reply = { type: "VERSION", version: VERSION };
+    if (event.ports && event.ports[0]) event.ports[0].postMessage(reply);
+    else if (event.source) event.source.postMessage(reply);
+  }
 });
 
 self.addEventListener("activate", (event) => {
