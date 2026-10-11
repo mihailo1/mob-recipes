@@ -45,7 +45,7 @@ export default async function RecipePage({ params }) {
         name={recipe.name}
         image={recipe.image || ""}
       />
-      <Link href="/" className="back-link">
+      <Link href="/" scroll={false} className="back-link">
         ← Back to search
       </Link>
 

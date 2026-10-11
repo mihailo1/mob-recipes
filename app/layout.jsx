@@ -3,6 +3,7 @@ import { KitchenProvider } from "../lib/store";
 import NavBar from "../components/NavBar";
 import SWRegister from "../components/SWRegister";
 import IOSZoomGuard from "../components/IOSZoomGuard";
+import Providers from "../components/Providers";
 
 export const metadata = {
   title: "Mob Recipes Archive",
@@ -41,10 +42,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <KitchenProvider>
-          <NavBar />
-          {children}
-        </KitchenProvider>
+        <Providers>
+          <KitchenProvider>
+            <NavBar />
+            {children}
+          </KitchenProvider>
+        </Providers>
         <SWRegister />
         <IOSZoomGuard />
       </body>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useKitchen } from "../../lib/store";
+import { useRecipes } from "../../lib/queries";
 import { aggregateIngredients } from "../../lib/ingredients.mjs";
 import RecipeImage from "../../components/RecipeImage";
 
@@ -30,8 +31,6 @@ export default function PoolPage() {
   const { pool, togglePool, clearPool, ready } = useKitchen();
   const [view, setView] = useState("all");
   const [copyStatus, setCopyStatus] = useState("");
-  const [recipes, setRecipes] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [checked, setChecked] = useState(() => new Set());
 
   useEffect(() => {
@@ -40,32 +39,9 @@ export default function PoolPage() {
     setChecked(loadChecked());
   }, []);
 
-  useEffect(() => {
-    if (!ready) return;
-    const slugs = [...pool];
-    if (slugs.length === 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setRecipes([]);
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    Promise.all(
-      slugs.map((slug) =>
-        fetch(`/api/recipe/${slug}`)
-          .then((r) => (r.ok ? r.json() : null))
-          .catch(() => null),
-      ),
-    ).then((results) => {
-      if (cancelled) return;
-      setRecipes(results.filter(Boolean));
-      setLoading(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [pool, ready]);
+  // Cached per slug, so toggling the pool or coming back is instant.
+  const poolSlugs = useMemo(() => [...pool], [pool]);
+  const { recipes, isPending: loading } = useRecipes(poolSlugs);
 
   const shoppingList = useMemo(() => aggregateIngredients(recipes), [recipes]);
 

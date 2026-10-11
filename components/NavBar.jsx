@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useKitchen } from "../lib/store";
+import { recipeIndexQuery } from "../lib/queries";
 import ResumeChip from "./ResumeChip";
 
 const ICON_PROPS = {
@@ -58,6 +60,7 @@ export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
   const { pool, favorites } = useKitchen();
+  const queryClient = useQueryClient();
   const [rolling, setRolling] = useState(false);
 
   const tabs = [
@@ -69,10 +72,11 @@ export default function NavBar() {
   async function surpriseMe() {
     setRolling(true);
     try {
-      const res = await fetch("/search-index.json");
-      const list = await res.json();
+      const list = await queryClient.ensureQueryData(recipeIndexQuery);
       const pick = list[Math.floor(Math.random() * list.length)];
       if (pick) router.push(`/recipes/${pick.slug}`);
+    } catch {
+      // index unavailable (offline, not cached yet): do nothing
     } finally {
       setRolling(false);
     }
@@ -82,7 +86,7 @@ export default function NavBar() {
     <>
       <header className="nb-top">
         <div className="container nb-top-inner">
-          <Link href="/" className="nb-brand">
+          <Link href="/" scroll={false} className="nb-brand">
             mob<span> / my kitchen</span>
           </Link>
 
@@ -93,6 +97,7 @@ export default function NavBar() {
                 <Link
                   key={href}
                   href={href}
+                  scroll={href === "/" ? false : undefined}
                   aria-current={active ? "page" : undefined}
                   className={`nb-link ${active ? "active" : ""}`}
                 >
@@ -123,6 +128,7 @@ export default function NavBar() {
             <Link
               key={href}
               href={href}
+              scroll={href === "/" ? false : undefined}
               aria-current={active ? "page" : undefined}
               className={`nb-tab ${active ? "active" : ""}`}
             >

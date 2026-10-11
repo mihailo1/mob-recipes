@@ -1,20 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useKitchen } from "../../lib/store";
+import { useRecipeIndex } from "../../lib/queries";
 import RecipeCard from "../../components/RecipeCard";
 
 export default function FavoritesPage() {
   const { favorites, ready } = useKitchen();
-  const [index, setIndex] = useState(null);
-
-  useEffect(() => {
-    fetch("/search-index.json")
-      .then((r) => r.json())
-      .then(setIndex)
-      .catch(() => setIndex([]));
-  }, []);
+  const { data: index, isError } = useRecipeIndex();
 
   const recipes = useMemo(() => {
     if (!index) return [];
@@ -29,7 +23,7 @@ export default function FavoritesPage() {
         <p>Recipes you&apos;ve saved for later.</p>
       </header>
 
-      {!ready || !index ? (
+      {!ready || (!index && !isError) ? (
         <p className="meta-row">Loading…</p>
       ) : recipes.length === 0 ? (
         <div className="empty">
