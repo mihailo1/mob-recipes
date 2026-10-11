@@ -7,9 +7,15 @@ import {
   findIngredientMentions,
 } from "../lib/ingredients.mjs";
 import { useKitchen } from "../lib/store";
+import { useSaveToggle } from "./folders/useSaveToggle";
+import { openAddToFolder } from "./folders/AddToFolderSheet";
+import { NO_FOLDERS, useFoldersFor } from "./folders/folderData";
+import { FolderIcon } from "./folders/icons";
 
 export default function RecipeBody({ recipe }) {
-  const { pool, favorites, togglePool, toggleFavorite } = useKitchen();
+  const { pool, favorites, folders = NO_FOLDERS, togglePool } = useKitchen();
+  const toggleSave = useSaveToggle();
+  const myFolders = useFoldersFor(folders, favorites, recipe.slug);
   const [cooking, setCooking] = useState(false);
   useEffect(() => {
     if (!cooking || !navigator.wakeLock) return;
@@ -70,9 +76,35 @@ export default function RecipeBody({ recipe }) {
         <button
           type="button"
           className={`pill-btn ${isFav ? "is-active" : ""}`}
-          onClick={() => toggleFavorite(recipe.slug)}
+          onClick={() => toggleSave(recipe)}
         >
           {isFav ? "♥ Saved" : "♡ Save"}
+        </button>
+        <button
+          type="button"
+          className={`pill-btn fd-pill ${myFolders.length ? "is-active" : ""}`}
+          aria-label={
+            myFolders.length
+              ? `In ${myFolders.length === 1 ? `folder ${myFolders[0].name}` : `${myFolders.length} folders`}. Change folders`
+              : "Add to folder"
+          }
+          onClick={() => openAddToFolder(recipe)}
+        >
+          {myFolders.length === 1 ? (
+            <>
+              <span className="fd-pill-emoji" aria-hidden="true">
+                {myFolders[0].emoji}
+              </span>
+              <span className="fd-pill-text">{myFolders[0].name}</span>
+            </>
+          ) : (
+            <>
+              <FolderIcon size={17} filled={myFolders.length > 1} />
+              <span className="fd-pill-text">
+                {myFolders.length ? `${myFolders.length} folders` : "Add to folder"}
+              </span>
+            </>
+          )}
         </button>
         <button
           type="button"

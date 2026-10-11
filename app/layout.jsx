@@ -5,6 +5,7 @@ import SWRegister from "../components/SWRegister";
 import IOSZoomGuard from "../components/IOSZoomGuard";
 import Providers from "../components/Providers";
 import AppNotices from "../components/AppNotices";
+import GlobalOverlays from "../components/GlobalOverlays";
 import { APP_VERSION } from "../lib/version";
 
 export const metadata = {
@@ -50,6 +51,7 @@ export default function RootLayout({ children }) {
             {children}
             <p className="upd-version">Mob Recipes v{APP_VERSION}</p>
             <AppNotices />
+            <GlobalOverlays />
           </KitchenProvider>
         </Providers>
         <SWRegister />

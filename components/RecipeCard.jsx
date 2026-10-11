@@ -3,9 +3,17 @@
 import Link from "next/link";
 import RecipeImage from "./RecipeImage";
 import { useKitchen } from "../lib/store";
+import { useSaveToggle } from "./folders/useSaveToggle";
+import { FolderIcon } from "./folders/icons";
 
-export default function RecipeCard({ recipe }) {
-  const { pool, favorites, togglePool, toggleFavorite } = useKitchen();
+/**
+ * Optional (Saved page only):
+ *  onFolder   shows a folder button that calls it (opens "Save to folder")
+ *  inFolder   folder button looks active (recipe is in at least one folder)
+ */
+export default function RecipeCard({ recipe, onFolder, inFolder = false }) {
+  const { pool, favorites, togglePool } = useKitchen();
+  const toggleSave = useSaveToggle();
   const inPool = pool.has(recipe.slug);
   const isFav = favorites.has(recipe.slug);
 
@@ -19,10 +27,20 @@ export default function RecipeCard({ recipe }) {
           type="button"
           aria-label={isFav ? "Remove from favorites" : "Save to favorites"}
           className={`icon-btn ${isFav ? "is-active" : ""}`}
-          onClick={() => toggleFavorite(recipe.slug)}
+          onClick={() => toggleSave(recipe)}
         >
           {isFav ? "♥" : "♡"}
         </button>
+        {onFolder ? (
+          <button
+            type="button"
+            aria-label={inFolder ? "Change folders" : "Add to folder"}
+            className={`icon-btn fd-card-btn ${inFolder ? "is-active" : ""}`}
+            onClick={onFolder}
+          >
+            <FolderIcon size={17} filled={inFolder} />
+          </button>
+        ) : null}
         <button
           type="button"
           aria-label={inPool ? "Remove from shopping list" : "Add to shopping list"}
