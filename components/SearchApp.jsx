@@ -139,6 +139,8 @@ export default function SearchApp() {
   ]);
 
   useEffect(() => {
+    // Reset pagination whenever a filter changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVisible(PAGE_SIZE);
   }, [query, category, cuisine, selectedIngredients, quick, sort]);
 

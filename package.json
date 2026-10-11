@@ -8,18 +8,21 @@
     "prebuild": "node scripts/build-index.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "scrape": "node scripts/scrape.mjs",
     "build-index": "node scripts/build-index.mjs"
   },
   "dependencies": {
-    "fuse.js": "^7.0.0",
-    "next": "14.2.35",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "fuse.js": "^7.5.0",
+    "next": "16.4.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.35"
+    "eslint": "^9.39.5",
+    "eslint-config-next": "16.4.0"
+  },
+  "engines": {
+    "node": ">=20.9"
   }
 }

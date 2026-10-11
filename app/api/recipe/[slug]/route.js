@@ -14,8 +14,9 @@ function getMap() {
   return cache;
 }
 
-export function GET(_req, { params }) {
-  const recipe = getMap().get(params.slug);
+export async function GET(_req, { params }) {
+  const { slug } = await params;
+  const recipe = getMap().get(slug);
   if (!recipe) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }

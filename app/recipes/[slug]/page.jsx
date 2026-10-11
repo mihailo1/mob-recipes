@@ -23,7 +23,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }) {
-  const recipe = getRecipeMap().get(params.slug);
+  const { slug } = await params;
+  const recipe = getRecipeMap().get(slug);
   if (!recipe) return {};
   return {
     title: `${recipe.name} — Mob Recipes Archive`,
@@ -32,7 +33,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function RecipePage({ params }) {
-  const recipe = getRecipeMap().get(params.slug);
+  const { slug } = await params;
+  const recipe = getRecipeMap().get(slug);
   if (!recipe) notFound();
 
   return (

@@ -35,6 +35,8 @@ export default function PoolPage() {
   const [checked, setChecked] = useState(() => new Set());
 
   useEffect(() => {
+    // Read localStorage after mount so SSR and first client render match.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setChecked(loadChecked());
   }, []);
 
@@ -42,6 +44,7 @@ export default function PoolPage() {
     if (!ready) return;
     const slugs = [...pool];
     if (slugs.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRecipes([]);
       setLoading(false);
       return;

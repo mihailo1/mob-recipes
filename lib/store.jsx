@@ -28,6 +28,8 @@ export function KitchenProvider({ children }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    // Read localStorage after mount so SSR and first client render match.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPool(loadSet("mob-recipes:pool"));
     setFavorites(loadSet("mob-recipes:favorites"));
     setReady(true);
