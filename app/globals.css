@@ -3566,3 +3566,206 @@ html[data-resume] .toast-host {
   margin: 0;
   min-height: 0;
 }
+
+/* Device sync card (components/SyncCard.jsx), built on the .pt-* card */
+.sc-card + .pt-card {
+  margin-top: -16px;
+}
+.sc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.pt-btn.sc-secondary {
+  background: var(--chip-bg);
+  color: var(--ink);
+}
+.sc-code {
+  margin: 4px 0 0;
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.sc-card .pt-field input.sc-input {
+  max-width: 200px;
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+}
+.sc-done {
+  display: block;
+  margin: 0;
+  color: #3f8f6b;
+}
+
+/* Sharing (components/share/*) */
+.share-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.fd-strip-more {
+  margin-left: auto;
+  align-self: center;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: var(--chip-bg);
+  color: var(--ink);
+  cursor: pointer;
+}
+.fd-strip-more:active {
+  transform: scale(0.94);
+}
+.sh-panel,
+.sh-open {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fd-fade 0.2s ease both;
+}
+.sh-summary {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.sh-making {
+  margin: 8px 0;
+  color: var(--ink-muted);
+  font-size: 15px;
+}
+.sh-error {
+  margin: 0;
+  color: #b3261e;
+  font-size: 14px;
+}
+.sh-url {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+}
+.sh-url:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.sh-input[aria-invalid="true"] {
+  border-color: #b3261e;
+}
+.sh-note {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.sh-actions {
+  display: flex;
+  gap: 8px;
+}
+.sh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.sh-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Shared link page (/s/<id>) */
+.sh-head {
+  --fd-c: #d4451f;
+  margin: 18px 0 20px;
+}
+.sh-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.sh-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 8px 0 16px;
+}
+.sh-title {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.sh-count {
+  margin: 4px 0 0;
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+.sh-save:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.sh-safari {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.sh-safari p {
+  margin: 0 0 10px;
+  color: var(--ink-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.sh-folders {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  margin: 0 0 20px;
+}
+.sh-folder {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.sh-folder > :first-child {
+  grid-row: span 2;
+}
+.sh-folder-name {
+  font-weight: 700;
+  font-size: 15px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.sh-folder-count {
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+.sc-card .pt-note + .sc-actions {
+  margin-top: 12px;
+}

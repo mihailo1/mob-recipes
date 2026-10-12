@@ -7,6 +7,7 @@ import { useRecipes } from "../../lib/queries";
 import { aggregateIngredients } from "../../lib/ingredients.mjs";
 import RecipeImage from "../../components/RecipeImage";
 import PushToggle from "../../components/PushToggle";
+import SyncCard from "../../components/SyncCard";
 
 function loadChecked() {
   try {
@@ -206,6 +207,7 @@ export default function PoolPage() {
           </p>
         </>
       )}
+      <SyncCard />
       <PushToggle />
     </div>
   );

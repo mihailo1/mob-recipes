@@ -20,6 +20,7 @@ import {
   runMigrations,
 } from "./storage-migrations.mjs";
 import * as F from "./folders.mjs";
+import { importShare } from "./share.mjs";
 
 export { FOLDER_COLORS, FOLDER_EMOJIS } from "./folders.mjs";
 
@@ -329,6 +330,66 @@ function clearLastRecipe() {
   setLastRecipe(null);
 }
 
+/*
+ * Adds a shared folder link's doc (see lib/share.mjs) to Saved. Returns
+ * { folderIds, newRecipes }.
+ */
+function importShared(doc) {
+  const { folderIds, newRecipes, ...next } = importShare(currentData(), doc);
+  commit(next);
+  return { folderIds, newRecipes };
+}
+
+const sameSet = (a, b) => a.size === b.size && [...a].every((x) => b.has(x));
+const sameMap = (a, b) => a.size === b.size && [...a].every(([k, v]) => b.get(k) === v);
+// Folder content and order; updatedAt is bookkeeping and does not count.
+const sameFolders = (a, b) =>
+  a.length === b.length &&
+  a.every((f, i) => {
+    const g = b[i];
+    return (
+      f.id === g.id &&
+      f.name === g.name &&
+      f.emoji === g.emoji &&
+      f.color === g.color &&
+      f.items.length === g.items.length &&
+      f.items.every((it, j) => it.slug === g.items[j].slug && it.addedAt === g.items[j].addedAt)
+    );
+  });
+
+/*
+ * Replaces pool, favorites and folders with what device sync merged (see
+ * components/SyncEngine.jsx). Only parts that really differ are written, so
+ * unchanged parts keep their references and nothing re-renders for nothing.
+ */
+function replaceData(next) {
+  const cur = getSnapshot();
+  const patch = {};
+  if (!sameSet(cur.pool, next.pool)) {
+    writeJSON(POOL_KEY, [...next.pool]);
+    patch.pool = next.pool;
+  }
+  if (!sameMap(cur.favorites, next.favorites)) {
+    saveFavorites(next.favorites);
+    patch.favorites = next.favorites;
+  }
+  if (!sameFolders(cur.folders, next.folders)) {
+    saveFolders(next.folders);
+    patch.folders = next.folders.length ? next.folders : NO_FOLDERS;
+  }
+  if (!Object.keys(patch).length) return false;
+  state = { ...cur, ...patch };
+  emit();
+  return true;
+}
+
+/** Raw access for device sync, outside React. */
+export const kitchenStore = {
+  get: getSnapshot,
+  subscribe,
+  replaceData,
+};
+
 let persistAsked = false;
 // Best effort: ask the browser not to evict our storage under pressure.
 // Skipped on Firefox, where persist() shows a permission prompt.
@@ -378,6 +439,7 @@ export function KitchenProvider({ children }) {
       deleteFolder,
       moveFolder,
       setRecipeInFolder,
+      importShared,
       clearPool,
       setLastRecipe,
       clearLastRecipe,

@@ -5,6 +5,7 @@ import SWRegister from "../components/SWRegister";
 import IOSZoomGuard from "../components/IOSZoomGuard";
 import ViewportFix from "../components/ViewportFix";
 import NearbySync from "../components/NearbySync";
+import SyncEngine from "../components/SyncEngine";
 import Providers from "../components/Providers";
 import AppNotices from "../components/AppNotices";
 import GlobalOverlays from "../components/GlobalOverlays";
@@ -54,6 +55,7 @@ export default function RootLayout({ children }) {
             <p className="upd-version">Mob Recipes v{APP_VERSION}</p>
             <AppNotices />
             <GlobalOverlays />
+            <SyncEngine />
           </KitchenProvider>
         </Providers>
         <SWRegister />

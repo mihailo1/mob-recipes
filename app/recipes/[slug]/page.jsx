@@ -30,6 +30,12 @@ export async function generateMetadata({ params }) {
   return {
     title: `${recipe.name} — Mob Recipes Archive`,
     description: recipe.description || undefined,
+    // Link previews in Messages, Telegram etc. when a recipe is shared.
+    openGraph: {
+      title: recipe.name,
+      description: recipe.description || undefined,
+      images: recipe.image ? [recipe.image] : undefined,
+    },
   };
 }
 

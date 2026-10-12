@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef } from "react";
 import FolderCover from "./FolderCover";
-import { PlusIcon } from "./icons";
+import { MoreIcon, PlusIcon } from "./icons";
 import { recipesLabel } from "./folderData";
 
 /*
@@ -41,6 +41,8 @@ export default function FolderStrip({
   hrefFor,
   onSelect,
   onNewFolder,
+  onMore,
+  moreRef,
 }) {
   const scrollerRef = useRef(null);
 
@@ -63,6 +65,18 @@ export default function FolderStrip({
       <div className="fd-strip-head">
         <h2 id="fd-strip-title">Folders</h2>
         {folders.length ? <span>{folders.length}</span> : null}
+        {onMore ? (
+          <button
+            ref={moreRef}
+            type="button"
+            className="fd-strip-more"
+            aria-label="Share or open shared recipes"
+            aria-haspopup="dialog"
+            onClick={onMore}
+          >
+            <MoreIcon size={18} />
+          </button>
+        ) : null}
       </div>
       <div className="fd-scroller" ref={scrollerRef}>
         <Tile

@@ -33,6 +33,19 @@ than any private endpoint — no login, no paywall bypass.
   It cannot match devices when iCloud Private Relay is on or when one device
   uses IPv4 and the other IPv6. Logic: `lib/nearby.mjs`, tests:
   `node scripts/test-nearby.mjs`.
+- Sharing: a recipe page shares its own URL through the system share sheet
+  (or copies it). A folder, or everything saved, is stored as a read only
+  copy in Redis for a year (`POST /api/share`) and opens at `/s/<id>`, where
+  the receiver can save it into their own Saved. Logic: `lib/share.mjs`,
+  tests: `node scripts/test-share.mjs`.
+- Device sync: two devices link with a 6 digit code (`/api/sync/pair`, codes
+  live 10 minutes, tries are rate limited) and then share a "space" in Redis.
+  Each device sends what changed since its last sync and gets back the merged
+  result (`/api/sync`). Every value carries the time it changed and the newer
+  one wins, value by value; removals are kept as markers so they reach the
+  other devices. Linking first keeps a raw copy of the data under
+  `<key>:backup-sync`. Logic: `lib/sync.mjs`, tests:
+  `node scripts/test-sync.mjs`.
 
 ## Running it yourself
 

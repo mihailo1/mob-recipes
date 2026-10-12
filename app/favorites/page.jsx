@@ -28,6 +28,9 @@ import {
 } from "../../components/folders/FolderSheets";
 import { openAddToFolder } from "../../components/folders/AddToFolderSheet";
 import { showToast } from "../../components/Toast";
+import SavedMenuSheet from "../../components/share/SavedMenuSheet";
+import SyncCard from "../../components/SyncCard";
+import { buildShare } from "../../lib/share.mjs";
 import {
   NO_FOLDERS,
   liveItems,
@@ -133,7 +136,14 @@ function SavedApp() {
   // Sheets. Each opening gets a new key so its form starts fresh.
   const [edit, setEdit] = useState({ open: false, key: 0 });
   const [actions, setActions] = useState({ open: false, key: 0, folder: null });
+  const [menu, setMenu] = useState({ open: false, key: 0 });
   const moreRef = useRef(null);
+  const stripMoreRef = useRef(null);
+
+  // Share docs only list recipes the index still has (when it is loaded).
+  const shareDoc = (folderId) =>
+    buildShare({ favorites, folders }, folderId, (s) => !recipeMap.size || recipeMap.has(s));
+  const openMenu = () => setMenu((m) => ({ open: true, key: m.key + 1 }));
 
   // Folder switch in place: new history entry (Back returns), no scroll jump.
   // Filters stay; useRecipeFilters writes them back next to the folder param.
@@ -198,6 +208,18 @@ function SavedApp() {
           deleteFolder(target.id);
           showToast({ message: `Deleted “${target.name}”`, icon: "check", duration: 3000 });
         }}
+        getShareDoc={
+          actions.folder && summaries.byId.get(actions.folder.id)?.count
+            ? () => shareDoc(actions.folder.id)
+            : undefined
+        }
+      />
+      <SavedMenuSheet
+        key={`menu-${menu.key}`}
+        open={menu.open}
+        onClose={() => setMenu((m) => ({ ...m, open: false }))}
+        getShareDoc={() => shareDoc(null)}
+        savedCount={summaries.all.count}
       />
     </>
   );
@@ -225,6 +247,8 @@ function SavedApp() {
       hrefFor={folderHref}
       onSelect={selectFolder}
       onNewFolder={openCreate}
+      onMore={openMenu}
+      moreRef={stripMoreRef}
     />
   ) : null;
 
@@ -267,6 +291,9 @@ function SavedApp() {
               </Link>{" "}
               to find something good.
             </p>
+            <button type="button" className="pill-btn" onClick={openMenu}>
+              Open a shared link
+            </button>
           </div>
         )}
         {sheets}
@@ -356,6 +383,7 @@ export default function FavoritesPage() {
       <Suspense fallback={<SearchAppSkeleton />}>
         <SavedApp />
       </Suspense>
+      <SyncCard />
     </div>
   );
 }

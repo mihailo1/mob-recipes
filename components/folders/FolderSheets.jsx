@@ -5,6 +5,9 @@ import BottomSheet from "../BottomSheet";
 import FolderForm, { suggestedLook } from "./FolderForm";
 import { FOLDER_LIMIT_MESSAGE } from "./AddToFolderSheet";
 import { PaletteIcon, PencilIcon, TrashIcon } from "./icons";
+import ShareLinkPanel from "../share/ShareLinkPanel";
+import { ShareIcon } from "../share/icons";
+import { recipesLabel } from "./folderData";
 
 /*
  * New folder / Edit folder sheet.
@@ -61,10 +64,23 @@ export function FolderEditSheet({
   );
 }
 
-/** "⋯" action sheet: Rename, Edit icon & color, Delete (with confirm). */
-export function FolderActionsSheet({ open, folder, onClose, onRename, onEditLook, onDelete }) {
+/**
+ * "⋯" action sheet: Share (when the folder has recipes), Rename, Edit icon &
+ * color, Delete (with confirm). getShareDoc() returns the doc to share.
+ */
+export function FolderActionsSheet({
+  open,
+  folder,
+  onClose,
+  onRename,
+  onEditLook,
+  onDelete,
+  getShareDoc,
+}) {
   const [confirming, setConfirming] = useState(false);
+  const [shareDoc, setShareDoc] = useState(null);
   if (!folder) return null;
+  const shareCount = shareDoc ? shareDoc.folders[0].items.length : 0;
 
   return (
     <BottomSheet
@@ -80,7 +96,14 @@ export function FolderActionsSheet({ open, folder, onClose, onRename, onEditLook
       }
       className="fd-sheet"
     >
-      {confirming ? (
+      {shareDoc ? (
+        <ShareLinkPanel
+          doc={shareDoc}
+          title={`${folder.emoji} ${folder.name}`}
+          summary={`${recipesLabel(shareCount)} from “${folder.name}”. Whoever opens the link can save their own copy.`}
+          onDone={onClose}
+        />
+      ) : confirming ? (
         <div className="fd-confirm">
           <span className="fd-confirm-icon" aria-hidden="true">
             <TrashIcon size={24} />
@@ -96,6 +119,18 @@ export function FolderActionsSheet({ open, folder, onClose, onRename, onEditLook
         </div>
       ) : (
         <ul className="fd-menu">
+          {getShareDoc ? (
+            <li>
+              <button
+                type="button"
+                className="fd-menu-item"
+                onClick={() => setShareDoc(getShareDoc())}
+              >
+                <ShareIcon size={20} />
+                Share folder
+              </button>
+            </li>
+          ) : null}
           <li>
             <button type="button" className="fd-menu-item" onClick={onRename}>
               <PencilIcon />

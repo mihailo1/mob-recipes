@@ -11,6 +11,7 @@ import { useSaveToggle } from "./folders/useSaveToggle";
 import { openAddToFolder } from "./folders/AddToFolderSheet";
 import { NO_FOLDERS, useFoldersFor } from "./folders/folderData";
 import { FolderIcon } from "./folders/icons";
+import ShareRecipeButton from "./share/ShareRecipeButton";
 
 export default function RecipeBody({ recipe }) {
   const { pool, favorites, folders = NO_FOLDERS, togglePool } = useKitchen();
@@ -114,6 +115,7 @@ export default function RecipeBody({ recipe }) {
         >
           {inPool ? "✓ In your kitchen" : "+ Add to shopping list"}
         </button>
+        <ShareRecipeButton recipe={recipe} />
         <button
           className="pill-btn cook-toggle"
           aria-pressed={cooking}

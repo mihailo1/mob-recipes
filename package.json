@@ -1,6 +1,6 @@
 {
   "name": "mob-recipes",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "description": "Searchable archive of Mob (mob.co.uk) recipes, built from publicly served recipe structured data (JSON-LD).",
   "scripts": {
