@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -32,6 +32,7 @@ import SavedMenuSheet from "../../components/share/SavedMenuSheet";
 import SyncCard from "../../components/SyncCard";
 import PageTransition from "../../components/PageTransition";
 import { OfflineNote } from "../../components/OfflineKeeper";
+import FirstLoadSuspense from "../../components/FirstLoadSuspense";
 import { buildShare } from "../../lib/share.mjs";
 import {
   NO_FOLDERS,
@@ -57,7 +58,7 @@ const FOLDER_SORT_OPTIONS = SAVED_SORT_OPTIONS.map((o) =>
 const folderHref = (id) =>
   id ? `/favorites?${FOLDER_PARAM}=${encodeURIComponent(id)}` : "/favorites";
 
-// Must render under <Suspense> (useSearchParams via useRecipeFilters).
+// Must render under <FirstLoadSuspense> (useSearchParams via useRecipeFilters).
 function SavedApp() {
   const {
     favorites,
@@ -381,9 +382,9 @@ export default function FavoritesPage() {
           <h1>Saved for a good day.</h1>
           <p>Recipes you&apos;ve saved for later.</p>
         </header>
-        <Suspense fallback={<SearchAppSkeleton />}>
+        <FirstLoadSuspense fallback={<SearchAppSkeleton />}>
           <SavedApp />
-        </Suspense>
+        </FirstLoadSuspense>
         <SyncCard />
         <OfflineNote />
       </div>

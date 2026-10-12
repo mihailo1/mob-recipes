@@ -1,11 +1,11 @@
 "use client";
 
-import { ViewTransition } from "react";
 import Link from "next/link";
 import RecipeImage from "./RecipeImage";
 import { haptic } from "../lib/haptics";
 import Haptic from "./Haptic";
 import { OPEN, isLastOpenedRecipe, recipePhotoName } from "../lib/transitions";
+import PhotoMorph from "./PhotoMorph";
 import { useKitchen } from "../lib/store";
 import { useSaveToggle } from "./folders/useSaveToggle";
 import { FolderIcon } from "./folders/icons";
@@ -27,9 +27,9 @@ export default function RecipeCard({ recipe, onFolder, inFolder = false, morph =
     <div className={`card ${isLastOpenedRecipe(recipe.slug) ? "is-last-opened" : ""}`}>
       <Link href={`/recipes/${recipe.slug}`} transitionTypes={OPEN} className="card-media">
         {morph ? (
-          <ViewTransition name={recipePhotoName(recipe.slug)} share="morph" default="none">
+          <PhotoMorph name={recipePhotoName(recipe.slug)}>
             <RecipeImage className="card-image" src={recipe.image} alt={recipe.name} />
-          </ViewTransition>
+          </PhotoMorph>
         ) : (
           <RecipeImage className="card-image" src={recipe.image} alt={recipe.name} />
         )}

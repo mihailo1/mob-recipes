@@ -54,9 +54,12 @@ than any private endpoint — no login, no paywall bypass.
   `node scripts/test-sync.mjs`.
 - Browser features used for the feel of the app, each one optional (older
   browsers simply skip it):
-  - View Transitions (React `<ViewTransition>`): a recipe photo morphs from
-    its card into the recipe page and back, tabs slide. Names and types live
-    in `lib/transitions.js`, animations at the end of `app/globals.css`.
+  - View Transitions (React `<ViewTransition>`): three styles picked per
+    device at the bottom of My kitchen (`lib/transitionStyle.js`): Slide (a
+    recipe slides in like an iPhone screen, tabs switch at once), Photo (only
+    the photo flies from its card into the recipe and back) and Fade. Names
+    and types live in `lib/transitions.js`, animations at the end of
+    `app/globals.css`. Respects Reduce Motion (no animation at all).
   - Scroll driven animations: reading progress line, hero photo drift, cards
     rising into view, the cooking view progress bar.
   - `@starting-style` entry animations, Popover API plus CSS anchor
@@ -64,8 +67,9 @@ than any private endpoint — no login, no paywall bypass.
     `content-visibility` for long recipe grids, `text-wrap` balance/pretty.
   - Cooking view (`components/cook/CookMode.jsx`): one step per screen with
     scroll snap, Screen Wake Lock, the step remembered per recipe.
-  - Haptics (`lib/haptics.js`): `navigator.vibrate` where it exists; on
-    iPhone (iOS 18+) toggling a hidden native switch plays the system tap.
+  - Haptics: `navigator.vibrate` where it exists (`lib/haptics.js`); on
+    iPhone a clear label over each button wraps a hidden native switch, and a
+    real finger tap on it plays the system tick (`components/Haptic.jsx`).
   - Dark theme from `prefers-color-scheme`: all colors are tokens on `:root`.
   - Offline Saved: `components/OfflineKeeper.jsx` sends the service worker
     the recipe pages, JSON and photos of everything in Saved and My kitchen

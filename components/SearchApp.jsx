@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, ViewTransition } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import RecipeImage from "./RecipeImage";
 import RecipeCard from "./RecipeCard";
@@ -16,10 +16,11 @@ import { useListRestoration } from "../lib/useListRestoration";
 import { DISCOVER_SORT_OPTIONS, QUICK_MINUTES } from "../lib/filters";
 import TimeRange from "./filters/TimeRange";
 import { OPEN, recipePhotoName } from "../lib/transitions";
+import PhotoMorph from "./PhotoMorph";
 
 const PAGE_SIZE = 40;
 
-/** Loading state; also the <Suspense> fallback in app/page.jsx. */
+/** Loading state; also the first load fallback in app/page.jsx. */
 export function SearchAppSkeleton() {
   return (
     <div className="grid skeleton-grid" aria-label="Loading recipes">
@@ -30,7 +31,7 @@ export function SearchAppSkeleton() {
   );
 }
 
-// Must render under <Suspense> (useSearchParams via useRecipeFilters).
+// Must render under <FirstLoadSuspense> (useSearchParams via useRecipeFilters).
 export default function SearchApp() {
   const { data, isError, refetch } = useRecipeIndex();
   const recipes = data ?? null;
@@ -106,14 +107,14 @@ export default function SearchApp() {
             </button>
           </div>
           <Link className="hero-photo" href={`/recipes/${featured.slug}`} transitionTypes={OPEN}>
-            <ViewTransition name={recipePhotoName(featured.slug)} share="morph" default="none">
+            <PhotoMorph name={recipePhotoName(featured.slug)}>
               <RecipeImage
                 src={featured.image}
                 alt={featured.name}
                 priority
                 className="hero-image"
               />
-            </ViewTransition>
+            </PhotoMorph>
             <div className="hero-caption">
               <span>
                 {featured.totalTimeMinutes} MIN · TONIGHT’S INSPIRATION

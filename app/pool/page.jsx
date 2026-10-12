@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, ViewTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useKitchen } from "../../lib/store";
 import { useRecipes } from "../../lib/queries";
@@ -15,6 +15,8 @@ import { groupByAisle, shoppingListText } from "../../lib/aisles.mjs";
 import { haptic } from "../../lib/haptics";
 import Haptic from "../../components/Haptic";
 import { OPEN, recipePhotoName } from "../../lib/transitions";
+import PhotoMorph from "../../components/PhotoMorph";
+import TransitionPicker from "../../components/TransitionPicker";
 
 function loadChecked() {
   try {
@@ -127,9 +129,9 @@ export default function PoolPage() {
                 <div className="pool-recipe-list">
                   {recipes.map((r) => (
                     <div className="pool-recipe-item" key={r.slug}>
-                      <ViewTransition name={recipePhotoName(r.slug)} share="morph" default="none">
+                      <PhotoMorph name={recipePhotoName(r.slug)}>
                         <RecipeImage className="pool-thumb" src={r.image} alt={r.name} />
-                      </ViewTransition>
+                      </PhotoMorph>
                       <Link
                         href={`/recipes/${r.slug}`}
                         transitionTypes={OPEN}
@@ -221,6 +223,7 @@ export default function PoolPage() {
         )}
         <SyncCard />
         <PushToggle />
+        <TransitionPicker />
       </div>
     </PageTransition>
   );

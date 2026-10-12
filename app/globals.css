@@ -3596,6 +3596,32 @@ html[data-resume] .toast-host {
   min-height: 0;
 }
 
+/* Page animation trial card (components/TransitionPicker.jsx) */
+.tp-seg {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.tp-opt {
+  min-height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tp-opt[aria-checked="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
 /* Device sync card (components/SyncCard.jsx), built on the .pt-* card */
 .sc-card + .pt-card {
   margin-top: -16px;
@@ -3893,9 +3919,8 @@ html[data-resume] .toast-host {
 
 /* ---------------------------------------------------------------------------
    Page transitions (View Transitions API through React <ViewTransition>,
-   see lib/transitions.js and components/PageTransition.jsx). A recipe photo
-   morphs between the card and the recipe page; tabs slide; opening a recipe
-   fades the new page up. Browsers without the API skip all of this.
+   see lib/transitions.js and components/PageTransition.jsx). Browsers
+   without the API skip all of this.
    ------------------------------------------------------------------------ */
 ::view-transition {
   /* Taps during the short animation reach the new page. */
@@ -3922,12 +3947,59 @@ html[data-resume] .toast-host {
   animation: none;
 }
 
-::view-transition-group(.morph) {
-  animation-duration: 420ms;
-  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+/* Three styles to try, picked in My kitchen (lib/transitionStyle.js sets
+   <html data-vt>). Page classes come from components/PageTransition.jsx:
+   tab-in/tab-out, open-in/open-out, back-in/back-out. */
+:root {
+  --vt-ease: cubic-bezier(0.32, 0.72, 0, 1);
 }
-::view-transition-image-pair(.morph) {
-  animation-name: vt-soften;
+/* Each page snapshot is opaque, so it hides the page under it; a short page
+   still covers the whole screen. (A background on the snapshot pseudo
+   elements would hide the snapshot itself in Safari.) */
+:root:active-view-transition body > .container {
+  min-height: 100dvh;
+  background: var(--bg);
+}
+/* Pages animate as whole layers (the groups); the snapshots inside never
+   fade on their own. */
+::view-transition-old(.tab-out),
+::view-transition-old(.open-out),
+::view-transition-old(.back-out),
+::view-transition-new(.tab-in),
+::view-transition-new(.open-in),
+::view-transition-new(.back-in) {
+  animation: none;
+}
+
+/* Slide, like iPhone apps: tabs switch at once, a recipe slides in from the
+   right over the list (which drifts a little left) and back out the same way. */
+:root[data-vt="native"]::view-transition-group(.open-in) {
+  animation: 400ms var(--vt-ease) both vt-from-right;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+}
+:root[data-vt="native"]::view-transition-group(.open-out) {
+  animation: 400ms var(--vt-ease) both vt-to-left;
+}
+/* Going back the recipe leaves on top of the list. */
+:root[data-vt="native"]::view-transition-group(.back-out) {
+  z-index: 1;
+  animation: 360ms var(--vt-ease) both vt-to-right;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+}
+:root[data-vt="native"]::view-transition-group(.back-in) {
+  animation: 360ms var(--vt-ease) both vt-from-left;
+}
+
+/* Photo: pages change at once; only the photo flies (components/PhotoMorph.jsx
+   names photos in this style only). */
+:root[data-vt="photo"]::view-transition-group(.tab-out),
+:root[data-vt="photo"]::view-transition-group(.open-out),
+:root[data-vt="photo"]::view-transition-group(.back-out) {
+  display: none;
+}
+::view-transition-group(.morph) {
+  animation-duration: 400ms;
+  animation-timing-function: var(--vt-ease);
 }
 ::view-transition-old(.morph),
 ::view-transition-new(.morph) {
@@ -3936,70 +4008,36 @@ html[data-resume] .toast-host {
   object-fit: cover;
 }
 
-::view-transition-old(.tab-forward) {
-  --vt-x: -48px;
-  animation:
-    150ms ease-in both vt-fade reverse,
-    380ms cubic-bezier(0.32, 0.72, 0, 1) both vt-slide reverse;
-}
-::view-transition-new(.tab-forward) {
-  --vt-x: 48px;
-  animation:
-    220ms ease-out 120ms both vt-fade,
-    380ms cubic-bezier(0.32, 0.72, 0, 1) both vt-slide;
-}
-::view-transition-old(.tab-back) {
-  --vt-x: 48px;
-  animation:
-    150ms ease-in both vt-fade reverse,
-    380ms cubic-bezier(0.32, 0.72, 0, 1) both vt-slide reverse;
-}
-::view-transition-new(.tab-back) {
-  --vt-x: -48px;
-  animation:
-    220ms ease-out 120ms both vt-fade,
-    380ms cubic-bezier(0.32, 0.72, 0, 1) both vt-slide;
-}
-::view-transition-old(.nav-forward),
-::view-transition-old(.nav-back) {
-  animation: 150ms ease-in both vt-fade reverse;
-}
-::view-transition-new(.nav-forward) {
-  animation:
-    240ms ease-out 100ms both vt-fade,
-    420ms cubic-bezier(0.32, 0.72, 0, 1) both vt-rise;
-}
-::view-transition-new(.nav-back) {
-  animation: 220ms ease-out 80ms both vt-fade;
+/* Fade: the new page fades in over the old one, nothing moves. */
+:root[data-vt="fade"]::view-transition-group(.tab-in),
+:root[data-vt="fade"]::view-transition-group(.open-in),
+:root[data-vt="fade"]::view-transition-group(.back-in) {
+  animation: 180ms ease-out both vt-fade;
 }
 
 @keyframes vt-fade {
   from {
     opacity: 0;
   }
-  to {
-    opacity: 1;
-  }
 }
-@keyframes vt-slide {
+@keyframes vt-from-right {
   from {
-    translate: var(--vt-x) 0;
-  }
-  to {
-    translate: 0 0;
+    translate: 100% 0;
   }
 }
-@keyframes vt-rise {
+@keyframes vt-to-right {
+  to {
+    translate: 100% 0;
+  }
+}
+@keyframes vt-from-left {
   from {
-    translate: 0 14px;
-  }
-  to {
-    translate: 0 0;
+    translate: -30% 0;
   }
 }
-@keyframes vt-soften {
-  35% {
-    filter: blur(2px);
+@keyframes vt-to-left {
+  to {
+    translate: -30% 0;
   }
 }
 
