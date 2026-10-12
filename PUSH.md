@@ -34,7 +34,8 @@ export PATH=~/.nvm/versions/node/v22.22.0/bin:$PATH
 
 1. Create a private Blob store in the dashboard: Project, Storage tab, Create
    Database (or Create Store), Blob, choose Private, connect it to this
-   project for Production. Connecting injects `BLOB_READ_WRITE_TOKEN`. The
+   project for Production. Connecting injects `BLOB_STORE_ID` (newer stores sign in
+   with OIDC) or `BLOB_READ_WRITE_TOKEN` (older stores). Either works. The
    `vercel blob create-store` CLI form needs a newer CLI than 39.x, so use the
    dashboard.
 
@@ -142,7 +143,7 @@ current version already has a tag.
 - The app says "That code isn't right.": `SUBSCRIBE_CODE` on Vercel differs
   from what was typed. Check it with the `grep` above.
 - `/api/push/status` returns `configured: false`: check that
-  `BLOB_READ_WRITE_TOKEN`, `VAPID_PRIVATE_KEY` and `NOTIFY_SECRET` exist on
+  `BLOB_STORE_ID` (or `BLOB_READ_WRITE_TOKEN`), `VAPID_PRIVATE_KEY` and `NOTIFY_SECRET` exist on
   Vercel Production
   and that the project was redeployed after adding them. The Blob store must
   be private. If the state file is unreadable or malformed the routes answer

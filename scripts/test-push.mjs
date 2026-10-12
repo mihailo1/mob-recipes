@@ -499,12 +499,13 @@ await test("status is a pure function of env, never touches storage", () => {
   assert.equal(storageModeFromEnv({ NODE_ENV: "production" }), null);
   assert.equal(storageModeFromEnv({ NODE_ENV: "production", PUSH_ALLOW_FILE_STORE: "1", VERCEL: "1" }), null);
   assert.equal(storageModeFromEnv({ BLOB_READ_WRITE_TOKEN: "t", VERCEL: "1" }), "blob");
+  assert.equal(storageModeFromEnv({ BLOB_STORE_ID: "store_x", VERCEL: "1", NODE_ENV: "production" }), "blob", "OIDC style store");
   // Synchronous, and reads nothing but these env keys.
   const seen = new Set();
   const spy = new Proxy({ ...full }, { get: (t, k) => (seen.add(k), t[k]) });
   const out = pushStatus(spy);
   assert.equal(out instanceof Promise, false);
-  const allowed = ["BLOB_READ_WRITE_TOKEN", "VERCEL", "NODE_ENV", "PUSH_ALLOW_FILE_STORE", "VAPID_PRIVATE_KEY", "NOTIFY_SECRET", "SUBSCRIBE_CODE"];
+  const allowed = ["BLOB_READ_WRITE_TOKEN", "BLOB_STORE_ID", "VERCEL", "NODE_ENV", "PUSH_ALLOW_FILE_STORE", "VAPID_PRIVATE_KEY", "NOTIFY_SECRET", "SUBSCRIBE_CODE"];
   for (const k of seen) assert.ok(allowed.includes(k), String(k));
 });
 
