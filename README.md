@@ -37,7 +37,12 @@ than any private endpoint — no login, no paywall bypass.
   (or copies it). A folder, or everything saved, is stored as a read only
   copy in Redis for a year (`POST /api/share`) and opens at `/s/<id>`, where
   the receiver can save it into their own Saved. Logic: `lib/share.mjs`,
-  tests: `node scripts/test-share.mjs`.
+  tests: `node scripts/test-share.mjs`. Every share also shows a QR code;
+  the in-app scanner (scan icon in the top bar, jsQR loaded on demand) opens
+  recipe and folder codes inside the app and links devices from a sync code.
+  On iPhone a link or a Camera scan always opens Safari, which has its own
+  storage, so scanning inside the app is the way to land in the Home Screen
+  app. Logic: `lib/qr.mjs`, tests: `node scripts/test-qr.mjs`.
 - Device sync: two devices link with a 6 digit code (`/api/sync/pair`, codes
   live 10 minutes, tries are rate limited) and then share a "space" in Redis.
   Each device sends what changed since its last sync and gets back the merged

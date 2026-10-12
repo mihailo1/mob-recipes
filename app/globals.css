@@ -3769,3 +3769,74 @@ html[data-resume] .toast-host {
 .sc-card .pt-note + .sc-actions {
   margin-top: 12px;
 }
+
+/* QR codes (components/share/QrCode.jsx, QrScanner.jsx) */
+.nb-surprise.nb-scan {
+  margin-left: auto;
+  margin-right: -6px;
+}
+@media (min-width: 768px) {
+  .nb-links {
+    margin-left: auto;
+  }
+  .nb-surprise.nb-scan {
+    margin-right: -16px;
+  }
+}
+.qr-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+}
+.qr-code {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.qr-hint {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
+}
+.sc-qr {
+  display: inline-flex;
+  margin: 4px 0 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+}
+.qr-scan {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.qr-view {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #111;
+}
+.qr-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.qr-frame {
+  position: absolute;
+  inset: 18%;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  border-radius: 18px;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.25);
+}

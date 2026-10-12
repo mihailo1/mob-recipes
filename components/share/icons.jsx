@@ -32,3 +32,10 @@ export const CopyIcon = ({ size = 18 }) => (
     <path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" />
   </svg>
 );
+
+export const ScanIcon = ({ size = 20 }) => (
+  <svg width={size} height={size} {...base}>
+    <path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" />
+    <path d="M8 12h8" />
+  </svg>
+);

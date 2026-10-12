@@ -1,6 +1,6 @@
 {
   "name": "mob-recipes",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": true,
   "description": "Searchable archive of Mob (mob.co.uk) recipes, built from publicly served recipe structured data (JSON-LD).",
   "scripts": {
@@ -16,7 +16,9 @@
     "@tanstack/react-query": "^5.104.1",
     "@vercel/blob": "^2.8.1",
     "fuse.js": "^7.5.0",
+    "jsqr": "1.4.0",
     "next": "16.4.0",
+    "qrcode-generator": "2.0.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "web-push": "^3.6.7"

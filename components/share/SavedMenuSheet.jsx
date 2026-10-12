@@ -5,13 +5,15 @@ import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import BottomSheet from "../BottomSheet";
 import ShareLinkPanel from "./ShareLinkPanel";
-import { LinkIcon, ShareIcon } from "./icons";
-import { extractShareId } from "../../lib/share.mjs";
+import { LinkIcon, ScanIcon, ShareIcon } from "./icons";
+import { parseScan } from "../../lib/qr.mjs";
+import { openScanner } from "./QrScanner";
 import { recipesLabel } from "../folders/folderData";
 
 /*
  * "⋯" sheet next to Folders on Saved:
  *  - Share all saved: one link with every folder and the unfiled recipes
+ *  - Scan a QR code: the scanner, also on the scan icon at the top
  *  - Open a shared link: paste a link someone sent. Needed on iPhone, where
  *    links open in Safari, not in the app on the Home Screen.
  * Render with a fresh `key` per opening so it starts on the menu.
@@ -27,13 +29,13 @@ export default function SavedMenuSheet({ open, onClose, getShareDoc, savedCount 
     typeof navigator !== "undefined" && typeof navigator.clipboard?.readText === "function";
 
   function openLink(value) {
-    const id = extractShareId(value);
-    if (!id) {
-      setError("That doesn't look like a link to shared recipes.");
+    const target = parseScan(value);
+    if (target?.type !== "open") {
+      setError("That doesn't look like a link to a recipe or shared recipes.");
       return;
     }
     onClose();
-    router.push(`/s/${id}`);
+    router.push(target.path);
   }
 
   async function paste() {
@@ -41,7 +43,7 @@ export default function SavedMenuSheet({ open, onClose, getShareDoc, savedCount 
     try {
       const value = await navigator.clipboard.readText();
       setText(value);
-      if (extractShareId(value)) openLink(value);
+      if (parseScan(value)?.type === "open") openLink(value);
       else setError("The copied text isn't a link to shared recipes.");
     } catch {
       setError("Couldn't read the clipboard. Paste the link into the field instead.");
@@ -75,7 +77,7 @@ export default function SavedMenuSheet({ open, onClose, getShareDoc, savedCount 
         }}
       >
         <p className="sh-summary">
-          Got recipes from someone? Copy their link, then paste it here.
+          Got a recipe or folder link from someone? Copy it, then paste it here.
         </p>
         <input
           ref={inputRef}
@@ -130,6 +132,19 @@ export default function SavedMenuSheet({ open, onClose, getShareDoc, savedCount 
             </button>
           </li>
         ) : null}
+        <li>
+          <button
+            type="button"
+            className="fd-menu-item"
+            onClick={() => {
+              onClose();
+              openScanner();
+            }}
+          >
+            <ScanIcon />
+            Scan a QR code
+          </button>
+        </li>
         <li>
           <button
             type="button"

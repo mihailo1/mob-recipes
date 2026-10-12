@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
+  joinWithCode,
   linkSpace,
   pairApi,
   readLink,
@@ -10,12 +11,15 @@ import {
   unlink,
   useSyncState,
 } from "../lib/sync-client";
+import { pairUrl } from "../lib/qr.mjs";
+import QrCode from "./share/QrCode";
+import { openScanner } from "./share/QrScanner";
 
 /*
  * "Sync your devices" card (bottom of My kitchen and Saved).
  *
- * Linking: one device taps "Show a code" and gets 6 digits for 10 minutes;
- * the other taps "Enter a code". The showing device joins the space right
+ * Linking: one device taps "Show a code" and gets 6 digits and a QR code for
+ * 10 minutes; the other scans the QR in the app or types the digits. The showing device joins the space right
  * away (so its recipes are already there when the other one joins) and
  * leaves it again if the code is cancelled or expires unused.
  */
@@ -23,7 +27,7 @@ import {
 const POLL_EVERY_S = 2;
 
 const ERRORS = {
-  429: "Too many tries. Wait a few minutes and try again.",
+  429: "Too many codes. Wait a few minutes and try again.",
   503: "Sync isn't available right now. Try again later.",
 };
 const OFFLINE = "Couldn't reach the server. Check your connection and try again.";
@@ -145,23 +149,10 @@ export default function SyncCard() {
     }
     setBusy(true);
     setMessage("");
-    try {
-      const { status: st, data } = await pairApi.join(code);
-      if (st === 404) {
-        setMessage("That code didn't work. Check the digits, or show a new code on the other device.");
-        return;
-      }
-      if (st !== 200 || !data.space) {
-        setMessage(ERRORS[st] || OFFLINE);
-        return;
-      }
-      linkSpace(data.space);
-      setView("done");
-    } catch {
-      setMessage(OFFLINE);
-    } finally {
-      setBusy(false);
-    }
+    const r = await joinWithCode(code);
+    setBusy(false);
+    if (r.ok) setView("done");
+    else setMessage(r.error);
   }
 
   function turnOff() {
@@ -170,17 +161,24 @@ export default function SyncCard() {
     setMessage("Sync is off on this device. Your recipes stay here.");
   }
 
+  // Linked by scanning a QR while the code form was open.
+  const shown = view === "enter" && linked && !busy ? "done" : view;
+
   let body;
-  if (view === "code" && pair) {
+  if (shown === "code" && pair) {
     body = (
       <>
+        <div className="sc-qr">
+          <QrCode text={pairUrl(window.location.origin, pair.code)} size={176} label="QR code to link a device" />
+        </div>
+        <p className="pt-note">
+          On your other device, open Mob and tap the scan icon at the top. Or
+          type the code there under Sync your devices, Enter a code:
+        </p>
         <p className="sc-code" aria-label={`Code ${pair.code.split("").join(" ")}`}>
           {formatCode(pair.code)}
         </p>
-        <p className="pt-note">
-          On your other device, open My kitchen or Saved, scroll down to Sync
-          your devices and tap Enter a code. Expires in {left(pair.expires - now)}.
-        </p>
+        <p className="pt-note">Expires in {left(pair.expires - now)}.</p>
         <div className="sc-actions">
           <button type="button" className="pt-link" onClick={cancelCode}>
             Cancel
@@ -188,7 +186,7 @@ export default function SyncCard() {
         </div>
       </>
     );
-  } else if (view === "enter") {
+  } else if (shown === "enter") {
     body = (
       <form className="sc-enter" onSubmit={join}>
         <div className="pt-field">
@@ -215,13 +213,16 @@ export default function SyncCard() {
           <button type="submit" className="pt-btn" disabled={busy}>
             {busy ? "Linking…" : "Link"}
           </button>
+          <button type="button" className="pt-btn sc-secondary" onClick={openScanner} disabled={busy}>
+            Scan QR
+          </button>
           <button type="button" className="pt-link" onClick={() => setView("main")} disabled={busy}>
             Cancel
           </button>
         </div>
       </form>
     );
-  } else if (view === "done") {
+  } else if (shown === "done") {
     body = (
       <>
         <p className="pt-state sc-done">Linked</p>

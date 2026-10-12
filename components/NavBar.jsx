@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useKitchen } from "../lib/store";
 import { recipeIndexQuery } from "../lib/queries";
 import ResumeChip from "./ResumeChip";
+import { openScanner } from "./share/QrScanner";
 
 const ICON_PROPS = {
   width: 24,
@@ -53,6 +54,14 @@ const DiceIcon = () => (
     <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
     <circle cx="9" cy="15" r="1" fill="currentColor" stroke="none" />
     <circle cx="15" cy="15" r="1" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+// Scan: QR code frame
+const ScanIcon = () => (
+  <svg {...ICON_PROPS}>
+    <path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" />
+    <path d="M8 12h8" />
   </svg>
 );
 
@@ -108,6 +117,14 @@ export default function NavBar() {
             })}
           </nav>
 
+          <button
+            type="button"
+            className="nb-surprise nb-scan"
+            onClick={openScanner}
+            aria-label="Scan a QR code from another phone"
+          >
+            <ScanIcon />
+          </button>
           <button
             type="button"
             className="nb-surprise"
