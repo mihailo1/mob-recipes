@@ -2600,7 +2600,7 @@ html[data-resume] .toast-host {
   background: var(--chip-bg);
 }
 /* Thin bar in the folder color, so the color reads on any photo. */
-.fd-cover:not(.is-empty)::after {
+.fd-cover:not(.is-empty):not(.fd-cover-new)::after {
   content: "";
   position: absolute;
   left: 0;
