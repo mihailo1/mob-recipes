@@ -14,9 +14,7 @@ import { showToast } from "../../components/Toast";
 import { groupByAisle, shoppingListText } from "../../lib/aisles.mjs";
 import { haptic } from "../../lib/haptics";
 import Haptic from "../../components/Haptic";
-import { OPEN, recipePhotoName } from "../../lib/transitions";
-import PhotoMorph from "../../components/PhotoMorph";
-import TransitionPicker from "../../components/TransitionPicker";
+import { OPEN } from "../../lib/transitions";
 
 function loadChecked() {
   try {
@@ -129,9 +127,7 @@ export default function PoolPage() {
                 <div className="pool-recipe-list">
                   {recipes.map((r) => (
                     <div className="pool-recipe-item" key={r.slug}>
-                      <PhotoMorph name={recipePhotoName(r.slug)}>
-                        <RecipeImage className="pool-thumb" src={r.image} alt={r.name} />
-                      </PhotoMorph>
+                      <RecipeImage className="pool-thumb" src={r.image} alt={r.name} />
                       <Link
                         href={`/recipes/${r.slug}`}
                         transitionTypes={OPEN}
@@ -223,7 +219,6 @@ export default function PoolPage() {
         )}
         <SyncCard />
         <PushToggle />
-        <TransitionPicker />
       </div>
     </PageTransition>
   );

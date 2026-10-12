@@ -43,12 +43,12 @@ export function photoUrls(src, { width, dpr }) {
 // Photos already loaded in this tab, by recipe image: the URL that loaded
 // (largest width wins). A frame for the same photo at another size shows that
 // one at once instead of the blurred preview. This matters most for the
-// recipe page photo that morphs out of a card: the morph stays smooth because
-// nothing has to be blurred or decoded while it runs.
+// recipe page photo as it slides in or flies out of the Continue cooking chip:
+// nothing has to be blurred or decoded while the transition runs.
 const loadedPhotos = new Map(); // src -> { url, w }
 const MAX_LOADED = 300;
 
-function rememberLoaded(src, img) {
+export function rememberLoaded(src, img) {
   const w = img?.naturalWidth || 0;
   if (!src || !w) return;
   const prev = loadedPhotos.get(src);

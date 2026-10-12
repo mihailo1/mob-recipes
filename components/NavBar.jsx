@@ -9,8 +9,6 @@ import { recipeIndexQuery } from "../lib/queries";
 import ResumeChip from "./ResumeChip";
 import { openScanner } from "./share/QrScanner";
 import { OPEN, tabTypes } from "../lib/transitions";
-// Sets <html data-vt> for the page animations as soon as the app starts.
-import "../lib/transitionStyle";
 
 const ICON_PROPS = {
   width: 24,

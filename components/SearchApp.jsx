@@ -15,8 +15,7 @@ import {
 import { useListRestoration } from "../lib/useListRestoration";
 import { DISCOVER_SORT_OPTIONS, QUICK_MINUTES } from "../lib/filters";
 import TimeRange from "./filters/TimeRange";
-import { OPEN, recipePhotoName } from "../lib/transitions";
-import PhotoMorph from "./PhotoMorph";
+import { OPEN } from "../lib/transitions";
 
 const PAGE_SIZE = 40;
 
@@ -107,14 +106,12 @@ export default function SearchApp() {
             </button>
           </div>
           <Link className="hero-photo" href={`/recipes/${featured.slug}`} transitionTypes={OPEN}>
-            <PhotoMorph name={recipePhotoName(featured.slug)}>
-              <RecipeImage
-                src={featured.image}
-                alt={featured.name}
-                priority
-                className="hero-image"
-              />
-            </PhotoMorph>
+            <RecipeImage
+              src={featured.image}
+              alt={featured.name}
+              priority
+              className="hero-image"
+            />
             <div className="hero-caption">
               <span>
                 {featured.totalTimeMinutes} MIN · TONIGHT’S INSPIRATION
@@ -161,7 +158,7 @@ export default function SearchApp() {
         <div className="grid">
           {/* The hero above morphs the featured photo; one name per page. */}
           {shown.map((r) => (
-            <RecipeCard key={r.slug} recipe={r} morph={active || r.slug !== featured?.slug} />
+            <RecipeCard key={r.slug} recipe={r} />
           ))}
         </div>
       )}

@@ -3596,32 +3596,6 @@ html[data-resume] .toast-host {
   min-height: 0;
 }
 
-/* Page animation trial card (components/TransitionPicker.jsx) */
-.tp-seg {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-}
-.tp-opt {
-  min-height: 40px;
-  border: 0;
-  border-radius: 999px;
-  background: none;
-  color: var(--ink-muted);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.tp-opt[aria-checked="true"] {
-  background: var(--accent);
-  color: var(--accent-ink);
-}
-
 /* Device sync card (components/SyncCard.jsx), built on the .pt-* card */
 .sc-card + .pt-card {
   margin-top: -16px;
@@ -3947,9 +3921,10 @@ html[data-resume] .toast-host {
   animation: none;
 }
 
-/* Three styles to try, picked in My kitchen (lib/transitionStyle.js sets
-   <html data-vt>). Page classes come from components/PageTransition.jsx:
-   tab-in/tab-out, open-in/open-out, back-in/back-out. */
+/* Page classes come from components/PageTransition.jsx. Like iPhone apps:
+   tabs switch at once, a recipe slides in from the right over the list (which
+   drifts a little left) and back out the same way. From the Continue cooking
+   chip the recipe fades in while its photo flies out of the chip. */
 :root {
   --vt-ease: cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -3965,54 +3940,58 @@ html[data-resume] .toast-host {
 ::view-transition-old(.tab-out),
 ::view-transition-old(.open-out),
 ::view-transition-old(.back-out),
+::view-transition-old(.resume-out),
 ::view-transition-new(.tab-in),
 ::view-transition-new(.open-in),
-::view-transition-new(.back-in) {
+::view-transition-new(.back-in),
+::view-transition-new(.resume-in) {
   animation: none;
 }
 
-/* Slide, like iPhone apps: tabs switch at once, a recipe slides in from the
-   right over the list (which drifts a little left) and back out the same way. */
-:root[data-vt="native"]::view-transition-group(.open-in) {
+/* The page coming in is drawn over the one going out (Safari draws pages
+   that only exist in the old state on top otherwise). */
+::view-transition-group(.open-in) {
+  z-index: 1;
   animation: 400ms var(--vt-ease) both vt-from-right;
   box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
 }
-:root[data-vt="native"]::view-transition-group(.open-out) {
+::view-transition-group(.open-out) {
   animation: 400ms var(--vt-ease) both vt-to-left;
 }
 /* Going back the recipe leaves on top of the list. */
-:root[data-vt="native"]::view-transition-group(.back-out) {
+::view-transition-group(.back-out) {
   z-index: 1;
   animation: 360ms var(--vt-ease) both vt-to-right;
   box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
 }
-:root[data-vt="native"]::view-transition-group(.back-in) {
+::view-transition-group(.back-in) {
   animation: 360ms var(--vt-ease) both vt-from-left;
 }
 
-/* Photo: pages change at once; only the photo flies (components/PhotoMorph.jsx
-   names photos in this style only). */
-:root[data-vt="photo"]::view-transition-group(.tab-out),
-:root[data-vt="photo"]::view-transition-group(.open-out),
-:root[data-vt="photo"]::view-transition-group(.back-out) {
-  display: none;
+::view-transition-group(.resume-in) {
+  z-index: 1;
+  animation: 220ms ease-out both vt-fade;
 }
 ::view-transition-group(.morph) {
-  animation-duration: 400ms;
+  animation-duration: 420ms;
   animation-timing-function: var(--vt-ease);
+  /* Above the bars: the chip sits over the tab bar. */
+  z-index: 101;
 }
 ::view-transition-old(.morph),
 ::view-transition-new(.morph) {
-  /* The card is square, the hero is wide: keep the photo filled, no stretch. */
+  /* The chip photo is square, the recipe photo is wide: keep it filled. */
   height: 100%;
   object-fit: cover;
 }
-
-/* Fade: the new page fades in over the old one, nothing moves. */
-:root[data-vt="fade"]::view-transition-group(.tab-in),
-:root[data-vt="fade"]::view-transition-group(.open-in),
-:root[data-vt="fade"]::view-transition-group(.back-in) {
-  animation: 180ms ease-out both vt-fade;
+/* No see-through cross-fade: the small photo stays solid and the big one
+   fades in over it. */
+::view-transition-old(.morph) {
+  animation: none;
+}
+::view-transition-new(.morph) {
+  animation: 260ms ease-out both vt-fade;
+  mix-blend-mode: normal;
 }
 
 @keyframes vt-fade {
@@ -4174,11 +4153,6 @@ html[data-resume] .toast-host {
 .grid .card-media {
   aspect-ratio: 1 / 1;
   content-visibility: auto;
-}
-/* Coming back from a recipe: its photo morphs back into this card, which
-   needs the card drawn in the very first frame. */
-.grid .card.is-last-opened .card-media {
-  content-visibility: visible;
 }
 
 /* Nicer line breaks: balanced headings, no lonely last words in text. */

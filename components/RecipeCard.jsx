@@ -4,8 +4,7 @@ import Link from "next/link";
 import RecipeImage from "./RecipeImage";
 import { haptic } from "../lib/haptics";
 import Haptic from "./Haptic";
-import { OPEN, isLastOpenedRecipe, recipePhotoName } from "../lib/transitions";
-import PhotoMorph from "./PhotoMorph";
+import { OPEN } from "../lib/transitions";
 import { useKitchen } from "../lib/store";
 import { useSaveToggle } from "./folders/useSaveToggle";
 import { FolderIcon } from "./folders/icons";
@@ -14,25 +13,17 @@ import { FolderIcon } from "./folders/icons";
  * Optional (Saved page only):
  *  onFolder   shows a folder button that calls it (opens "Save to folder")
  *  inFolder   folder button looks active (recipe is in at least one folder)
- * morph=false: the photo does not morph into the recipe page, for a page that
- * already shows this recipe's photo elsewhere (names must be unique).
  */
-export default function RecipeCard({ recipe, onFolder, inFolder = false, morph = true }) {
+export default function RecipeCard({ recipe, onFolder, inFolder = false }) {
   const { pool, favorites, togglePool } = useKitchen();
   const toggleSave = useSaveToggle();
   const inPool = pool.has(recipe.slug);
   const isFav = favorites.has(recipe.slug);
 
   return (
-    <div className={`card ${isLastOpenedRecipe(recipe.slug) ? "is-last-opened" : ""}`}>
+    <div className="card">
       <Link href={`/recipes/${recipe.slug}`} transitionTypes={OPEN} className="card-media">
-        {morph ? (
-          <PhotoMorph name={recipePhotoName(recipe.slug)}>
-            <RecipeImage className="card-image" src={recipe.image} alt={recipe.name} />
-          </PhotoMorph>
-        ) : (
-          <RecipeImage className="card-image" src={recipe.image} alt={recipe.name} />
-        )}
+        <RecipeImage className="card-image" src={recipe.image} alt={recipe.name} />
       </Link>
       <div className="card-actions">
         <button

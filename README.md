@@ -54,12 +54,11 @@ than any private endpoint — no login, no paywall bypass.
   `node scripts/test-sync.mjs`.
 - Browser features used for the feel of the app, each one optional (older
   browsers simply skip it):
-  - View Transitions (React `<ViewTransition>`): three styles picked per
-    device at the bottom of My kitchen (`lib/transitionStyle.js`): Slide (a
-    recipe slides in like an iPhone screen, tabs switch at once), Photo (only
-    the photo flies from its card into the recipe and back) and Fade. Names
-    and types live in `lib/transitions.js`, animations at the end of
-    `app/globals.css`. Respects Reduce Motion (no animation at all).
+  - View Transitions (React `<ViewTransition>`): like iPhone apps, a recipe
+    slides in from the right and back out, tabs switch at once; from the
+    Continue cooking chip its photo flies into the recipe page. Types live in
+    `lib/transitions.js`, animations at the end of `app/globals.css`.
+    Respects Reduce Motion (no animation at all).
   - Scroll driven animations: reading progress line, hero photo drift, cards
     rising into view, the cooking view progress bar.
   - `@starting-style` entry animations, Popover API plus CSS anchor

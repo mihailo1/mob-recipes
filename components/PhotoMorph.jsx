@@ -1,16 +1,17 @@
 "use client";
 
 import { ViewTransition } from "react";
-import { useTransitionStyle } from "../lib/transitionStyle";
 
-// A recipe photo that flies between the card and the recipe page
-// (lib/transitions.js). Only in the "photo" transition style: in the others
-// the photo moves with its page.
+// A recipe photo that flies from the Continue cooking chip into the recipe
+// page (lib/transitions.js, RESUME). Only on that navigation: anywhere else
+// the photo moves with its page, and no name is set, so the same recipe on a
+// list and in the chip never clash.
+const SHARE = { "nav-resume": "morph", default: "none" };
+
 export default function PhotoMorph({ name, children }) {
-  const style = useTransitionStyle();
   if (!name) return children;
   return (
-    <ViewTransition name={name} share={style === "photo" ? "morph" : "none"} default="none">
+    <ViewTransition name={name} share={SHARE} default="none">
       {children}
     </ViewTransition>
   );

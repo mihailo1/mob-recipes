@@ -7,8 +7,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useKitchen } from "../lib/store";
 import { recipeIndexQuery } from "../lib/queries";
 import { dismissSuggestion, useNearbySuggestion } from "../lib/nearby-client";
-import { optimized } from "./RecipeImage";
-import { OPEN } from "../lib/transitions";
+import { optimized, rememberLoaded } from "./RecipeImage";
+import { RESUME, recipePhotoName } from "../lib/transitions";
+import PhotoMorph from "./PhotoMorph";
 
 // Floating "resume current recipe" chip (mini-player style). It is fixed
 // positioned above the tab bar, so it never changes the bar's layout or height.
@@ -49,19 +50,24 @@ export default function ResumeChip() {
       role="region"
       aria-label={nearby ? "Recipe open on another device" : "Resume recipe"}
     >
-      <Link href={`/recipes/${recipe.slug}`} transitionTypes={OPEN} className="nb-resume-main">
+      <Link href={`/recipes/${recipe.slug}`} transitionTypes={RESUME} className="nb-resume-main">
         {recipe.image && failedSrc !== recipe.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            className="nb-resume-thumb"
-            src={optimized(recipe.image, 256, 70)}
-            alt=""
-            width={40}
-            height={40}
-            loading="lazy"
-            decoding="async"
-            onError={() => setFailedSrc(recipe.image)}
-          />
+          // The photo flies into the recipe page; once loaded it also stands
+          // in there until the big one arrives (RecipeImage).
+          <PhotoMorph name={recipePhotoName(recipe.slug)}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              className="nb-resume-thumb"
+              src={optimized(recipe.image, 256, 70)}
+              alt=""
+              width={40}
+              height={40}
+              loading="lazy"
+              decoding="async"
+              onLoad={(e) => rememberLoaded(recipe.image, e.currentTarget)}
+              onError={() => setFailedSrc(recipe.image)}
+            />
+          </PhotoMorph>
         ) : (
           <span className="nb-resume-thumb nb-resume-thumb-empty" aria-hidden="true" />
         )}
