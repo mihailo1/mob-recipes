@@ -11,7 +11,7 @@
  * which posts {type: "SKIP_WAITING"}. User data lives in localStorage, which
  * the worker never touches.
  */
-const VERSION = "0.4.2";
+const VERSION = "0.4.3";
 const PREFIX = "mob-";
 const CACHES = {
   pages: `${PREFIX}pages-${VERSION}`,

@@ -6,6 +6,7 @@ import { createECDH, randomBytes } from "node:crypto";
 import {
   MAX_FAILS,
   accessCodeOk,
+  sameOriginOk,
   applyNotifyEffects,
   applySubscribe,
   applyUnsubscribe,
@@ -382,6 +383,15 @@ await test("access code gate: open when unset, constant time match when set", ()
   assert.equal(accessCodeOk("test-cod", "test-code"), false, "prefix");
   assert.equal(accessCodeOk("test-code ", "test-code"), false, "trailing space");
   assert.equal(accessCodeOk("TEST-CODE", "test-code"), false, "case");
+
+  const h = (o) => new Headers(o);
+  assert.equal(sameOriginOk(h({ "sec-fetch-site": "same-origin" })), true);
+  assert.equal(sameOriginOk(h({ "sec-fetch-site": "cross-site" })), false);
+  assert.equal(sameOriginOk(h({ "sec-fetch-site": "none" })), false);
+  assert.equal(sameOriginOk(h({})), false, "curl sends nothing");
+  assert.equal(sameOriginOk(h({ origin: "https://a.app", host: "a.app" })), true);
+  assert.equal(sameOriginOk(h({ origin: "https://evil.com", host: "a.app" })), false);
+  assert.equal(sameOriginOk(h({ origin: "not a url", host: "a.app" })), false);
   assert.equal(accessCodeOk("x".repeat(5000), "test-code"), false, "long input");
   assert.equal(safeEqual("a", "a"), true);
   assert.equal(safeEqual(undefined, "a"), false);
@@ -517,6 +527,36 @@ await test("parseState fills and validates fail counters", () => {
   for (const bad of [-1, 1.5, "1"]) {
     assert.equal(parseState({ ...base, subs: [{ ...old.subs[0], fails: bad }] }), null, String(bad));
   }
+});
+
+await test("custom messages: validated, no limits, never use the update slot", async () => {
+  const ok = validateNotifyBody({ custom: { body: " New recipes ", title: "Hi", url: "/pool" } });
+  assert.deepEqual(ok.custom, { title: "Hi", body: "New recipes", url: "/pool", tag: "mob-custom" });
+  assert.equal(validateNotifyBody({ custom: { body: "x" } }).custom.title, "Mob Recipes");
+  for (const bad of [
+    { body: "" },
+    { body: "x".repeat(201) },
+    { body: "x", title: "t".repeat(61) },
+    { body: "x", url: "https://evil.com" },
+    { body: "x", url: "//evil.com" },
+    { body: "x", url: "javascript:alert(1)" },
+    { title: "no body" },
+  ]) {
+    assert.equal(validateNotifyBody({ custom: bad }).ok, false, JSON.stringify(bad));
+  }
+
+  // Sent even inside the 24h window and for an already-sent version.
+  const sent = [];
+  const send = async (sub, payload) => (sent.push(payload), { ok: true });
+  const sub = { endpoint: ep(1), keys: keys(), addedAt: NOW, fails: 0 };
+  const state = { ...emptyState(), subs: [sub], lastPush: { at: NOW - 1000, version: "9.9.9" } };
+  const r = await executeNotify(state, { custom: ok.custom, now: NOW, limits: LIMITS, send });
+  assert.equal(r.status, "sent");
+  assert.equal(sent[0].body, "New recipes");
+  assert.equal(sent[0].tag, "mob-custom");
+  assert.equal(r.nextState, null, "lastPush untouched, nothing to write");
+  const none = await executeNotify(emptyState(), { custom: ok.custom, now: NOW, limits: LIMITS, send });
+  assert.equal(none.reason, "no-devices");
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

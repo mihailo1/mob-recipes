@@ -7,10 +7,11 @@ over.
 
 How it works:
 
-- A phone types the access code and taps "Notify me about updates" in My
-  kitchen. The app posts its push subscription to `/api/push/subscribe` with
-  the code in the `x-push-code` header. Without the right code the server
-  answers 401 before it reads the body or touches storage.
+- A phone taps "Notify me about updates" in My kitchen. The app posts its push
+  subscription to `/api/push/subscribe`. The server answers 401 before it reads
+  the body or touches storage unless the request comes from a page of this
+  site (`Sec-Fetch-Site: same-origin`, or a matching `Origin`), which refuses
+  curl and bots. `SUBSCRIBE_CODE` is optional: if set, the app asks for it.
 - All state lives in one private Vercel Blob file, `push/state.json`: the
   subscriptions, the last push, and a daily write counter. No database.
 - `.github/workflows/notify-update.yml` runs after each Production deploy. If
@@ -53,8 +54,9 @@ export PATH=~/.nvm/versions/node/v22.22.0/bin:$PATH
    )
    ```
 
-   `SUBSCRIBE_CODE` is the access code. Without it anyone could fill the 5
-   device slots and spend the Blob allowance, so always set it.
+   `SUBSCRIBE_CODE` is optional and off by default. If you set it, every phone
+   has to type it once. Without it the same-origin check and the limits below
+   are the only guard against someone filling the 5 device slots.
 
    Environment variables only apply to NEW deployments. The next merge to
    `main` creates one. To apply them without a code change, use the dashboard:
@@ -74,13 +76,21 @@ export PATH=~/.nvm/versions/node/v22.22.0/bin:$PATH
 
 4. On each phone: open the site in Safari or Chrome, add it to the Home Screen
    (iOS only delivers push to installed web apps), open the installed app, go
-   to My kitchen, type the access code once, and tap "Notify me about
-   updates". Allow notifications when asked. To see the code on your Mac
-   without printing the other secrets:
+   to My kitchen, and tap "Notify me about updates". Allow notifications when
+   asked. (If you set `SUBSCRIBE_CODE`, read it with
+   `grep '^SUBSCRIBE_CODE=' ~/.config/mob-recipes/push-secrets.env` and type it
+   once.)
 
-   ```sh
-   grep '^SUBSCRIBE_CODE=' ~/.config/mob-recipes/push-secrets.env
-   ```
+## Sending your own text
+
+A manual run of the workflow can send any short message to all subscribed
+phones. It ignores the version checks and the 24h limit and does not use up the
+update-alert slot. Title, `url` (a path such as `/pool`) and the tap target are
+optional; the text is at most 200 characters.
+
+```sh
+gh workflow run notify-update.yml --repo mihailo1/mob-recipes -f message="New recipes are in" -f title="Mob Recipes" -f url="/"
+```
 
 Until step 3 is done the workflow prints "Update alerts are not set up" and
 exits green. Until steps 1 and 2 are done `/api/push/status` reports
@@ -119,7 +129,7 @@ current version already has a tag.
 - Vercel Hobby Blob free allowance per month: 2,000 advanced operations (every
   write is one) and 10,000 simple operations (every read is one). If you go
   over, Blob is blocked for 30 days with no charge, and alerts silently stop
-  until the block ends. Requests without the access code never reach Blob.
+  until the block ends. Requests that do not come from this site never reach Blob.
   Each subscribed phone re-posts its subscription at most once a day (one
   read, no write when nothing changed), which heals a wiped list.
 - Writes are conditional on the ETag of the read (`ifMatch`). A conflicting

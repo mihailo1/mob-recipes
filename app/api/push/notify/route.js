@@ -37,6 +37,7 @@ export async function POST(req) {
     const r = await executeNotify(snap.state, {
       version: parsed.version,
       force: parsed.force,
+      custom: parsed.custom,
       now,
       limits: PUSH_LIMITS,
       send,

@@ -2,6 +2,7 @@ import { PUSH_LIMITS } from "../../../../lib/push/config.js";
 import { json, readJsonBody } from "../../../../lib/push/http.js";
 import {
   accessCodeOk,
+  sameOriginOk,
   applySubscribe,
   applyUnsubscribe,
   validateSubscribeBody,
@@ -20,7 +21,10 @@ const INVALID = { error: "invalid-body" };
 // Checked first, before the body is read and before any storage access, so
 // callers without the code can never cause a Blob read or write.
 function codeOk(req) {
-  return accessCodeOk(req.headers.get("x-push-code"), process.env.SUBSCRIBE_CODE);
+  return (
+    sameOriginOk(req.headers) &&
+    accessCodeOk(req.headers.get("x-push-code"), process.env.SUBSCRIBE_CODE)
+  );
 }
 
 export async function POST(req) {
