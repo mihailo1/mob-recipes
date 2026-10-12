@@ -39,7 +39,7 @@ const FOCUSABLE =
 let lockCount = 0;
 let lockSaved = null;
 
-function lockScroll() {
+export function lockScroll() {
   lockCount += 1;
   if (lockCount > 1) return;
   const html = document.documentElement;
@@ -51,7 +51,7 @@ function lockScroll() {
   html.setAttribute("data-sheet", "");
 }
 
-function unlockScroll() {
+export function unlockScroll() {
   lockCount = Math.max(0, lockCount - 1);
   if (lockCount > 0 || !lockSaved) return;
   const html = document.documentElement;

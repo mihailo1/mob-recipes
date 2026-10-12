@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   parseIngredientLine,
   formatIngredient,
@@ -12,34 +12,15 @@ import { openAddToFolder } from "./folders/AddToFolderSheet";
 import { NO_FOLDERS, useFoldersFor } from "./folders/folderData";
 import { FolderIcon } from "./folders/icons";
 import ShareRecipeButton from "./share/ShareRecipeButton";
+import { haptic } from "../lib/haptics";
+import CookMode from "./cook/CookMode";
+import StepText, { stepIngredients } from "./cook/StepText";
 
 export default function RecipeBody({ recipe }) {
   const { pool, favorites, folders = NO_FOLDERS, togglePool } = useKitchen();
   const toggleSave = useSaveToggle();
   const myFolders = useFoldersFor(folders, favorites, recipe.slug);
   const [cooking, setCooking] = useState(false);
-  useEffect(() => {
-    if (!cooking || !navigator.wakeLock) return;
-    let lock;
-    let cancelled = false;
-    const acquire = async () => {
-      try {
-        const next = await navigator.wakeLock.request("screen");
-        if (cancelled) await next.release();
-        else lock = next;
-      } catch {}
-    };
-    const visible = () => {
-      if (document.visibilityState === "visible") acquire();
-    };
-    acquire();
-    document.addEventListener("visibilitychange", visible);
-    return () => {
-      cancelled = true;
-      lock?.release();
-      document.removeEventListener("visibilitychange", visible);
-    };
-  }, [cooking]);
   const inPool = pool.has(recipe.slug);
   const isFav = favorites.has(recipe.slug);
 
@@ -111,21 +92,35 @@ export default function RecipeBody({ recipe }) {
         <button
           type="button"
           className={`pill-btn ${inPool ? "is-active" : ""}`}
-          onClick={() => togglePool(recipe.slug)}
+          onClick={() => {
+            haptic();
+            togglePool(recipe.slug);
+          }}
         >
           {inPool ? "✓ In your kitchen" : "+ Add to shopping list"}
         </button>
         <ShareRecipeButton recipe={recipe} />
         <button
+          type="button"
           className="pill-btn cook-toggle"
-          aria-pressed={cooking}
-          onClick={() => setCooking(!cooking)}
+          aria-haspopup="dialog"
+          onClick={() => setCooking(true)}
         >
-          {cooking ? "Exit cooking view" : "Start cooking ↗"}
+          Start cooking ↗
         </button>
       </div>
 
-      <div className={`recipe-layout ${cooking ? "cooking" : ""}`}>
+      {cooking ? (
+        <CookMode
+          recipe={recipe}
+          ingredients={scaledIngredients}
+          steps={stepSegments}
+          servings={servings}
+          onClose={() => setCooking(false)}
+        />
+      ) : null}
+
+      <div className="recipe-layout">
         <div>
           <div className="section-title-row">
             <h2 className="section-title">Ingredients</h2>
@@ -155,7 +150,7 @@ export default function RecipeBody({ recipe }) {
             {scaledIngredients.map((ing, i) => (
               <li key={i}>
                 <label>
-                  <input type="checkbox" />
+                  <input type="checkbox" onChange={haptic} />
                   <span>{formatIngredient(ing)}</span>
                 </label>
               </li>
@@ -172,27 +167,9 @@ export default function RecipeBody({ recipe }) {
             {stepSegments.map((segments, i) => (
               <li key={i}>
                 <span>
-                  {segments.map((seg, j) =>
-                    seg.match ? (
-                      <mark
-                        key={j}
-                        title={seg.tooltip || undefined}
-                        className="ingredient-mark"
-                      >
-                        {seg.text}
-                      </mark>
-                    ) : (
-                      <span key={j}>{seg.text}</span>
-                    ),
-                  )}
+                  <StepText segments={segments} />
                   <span className="step-ingredients">
-                    {[
-                      ...new Set(
-                        segments
-                          .filter((s) => s.match && s.tooltip)
-                          .map((s) => `${s.tooltip} ${s.text}`),
-                      ),
-                    ].map((t) => (
+                    {stepIngredients(segments).map((t) => (
                       <small key={t}>{t}</small>
                     ))}
                   </span>

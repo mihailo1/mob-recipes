@@ -3,6 +3,7 @@
 import { useKitchen } from "../../lib/store";
 import { showToast } from "../Toast";
 import { openAddToFolder } from "./AddToFolderSheet";
+import { haptic } from "../../lib/haptics";
 
 /**
  * Heart button behaviour shared by cards and the recipe page:
@@ -27,6 +28,7 @@ export function useSaveToggle() {
   const { favorites, toggleFavorite, restoreFavorite } = useKitchen();
   return (recipe) => {
     const { slug } = recipe;
+    haptic();
     // Re-saving a recently removed recipe: bring its folders back.
     if (!favorites.has(slug)) {
       const earlier = takeSnapshot(slug);

@@ -8,6 +8,7 @@ import { useKitchen } from "../lib/store";
 import { recipeIndexQuery } from "../lib/queries";
 import { dismissSuggestion, useNearbySuggestion } from "../lib/nearby-client";
 import { optimized } from "./RecipeImage";
+import { OPEN } from "../lib/transitions";
 
 // Floating "resume current recipe" chip (mini-player style). It is fixed
 // positioned above the tab bar, so it never changes the bar's layout or height.
@@ -48,7 +49,7 @@ export default function ResumeChip() {
       role="region"
       aria-label={nearby ? "Recipe open on another device" : "Resume recipe"}
     >
-      <Link href={`/recipes/${recipe.slug}`} className="nb-resume-main">
+      <Link href={`/recipes/${recipe.slug}`} transitionTypes={OPEN} className="nb-resume-main">
         {recipe.image && failedSrc !== recipe.image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img

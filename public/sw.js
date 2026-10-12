@@ -11,7 +11,7 @@
  * which posts {type: "SKIP_WAITING"}. User data lives in localStorage, which
  * the worker never touches.
  */
-const VERSION = "0.6.2";
+const VERSION = "0.7.0";
 // true: this release installs and takes over on its own, and open pages are
 // reloaded, with no "Update" banner. Must equal `silent` on the newest entry
 // in lib/changelog.js (next.config.mjs fails the build otherwise). Set it back
@@ -31,6 +31,10 @@ const CACHES = {
   photos: `${PREFIX}photos-v1`,
   // Not tied to VERSION: survives activate cleanup; also re-put on every install.
   offline: `${PREFIX}offline-v1`,
+  // Saved and My kitchen recipes kept for offline use (see KEEP_OFFLINE).
+  // Pages and JSON follow the build; photos do not depend on it.
+  kept: `${PREFIX}kept-${VERSION}-r${REV}`,
+  keptPhotos: `${PREFIX}kept-photos-v1`,
 };
 const LIMITS = {
   [CACHES.static]: 300,
@@ -45,6 +49,9 @@ const OFFLINE_PAGE = "/offline.html";
 const PRECACHE_REQUIRED = [OFFLINE_URL];
 const PRECACHE_OPTIONAL = ["/pool", "/favorites", "/search-index.json"];
 const NAV_TIMEOUT_MS = 3000;
+const KEEP_MAX_PAGES = 600; // pages + JSON, about 300 recipes
+const KEEP_MAX_PHOTOS = 900;
+const KEEP_PARALLEL = 3;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -79,6 +86,8 @@ self.addEventListener("message", (event) => {
   const type = event.data && event.data.type;
   if (type === "SKIP_WAITING") {
     self.skipWaiting();
+  } else if (type === "KEEP_OFFLINE") {
+    event.waitUntil(keepOffline(event.data, event.source));
   } else if (type === "GET_VERSION") {
     const reply = { type: "VERSION", version: VERSION };
     if (event.ports && event.ports[0]) event.ports[0].postMessage(reply);
@@ -140,11 +149,11 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   if (path === "/_next/image" || path.startsWith("/_next/image/")) {
-    event.respondWith(cacheFirst(event, CACHES.thumbs));
+    event.respondWith(cacheFirst(event, CACHES.thumbs, CACHES.keptPhotos));
     return;
   }
   if (path === "/search-index.json" || path.startsWith("/api/recipe/")) {
-    event.respondWith(staleWhileRevalidate(event, CACHES.data));
+    event.respondWith(staleWhileRevalidate(event, CACHES.data, CACHES.kept));
     return;
   }
   if (request.mode === "navigate") {
@@ -191,20 +200,26 @@ function trim(cacheName) {
   return job;
 }
 
-async function cacheFirst(event, cacheName) {
+// `kept` (optional): a KEEP_OFFLINE cache that is looked at first.
+async function cacheFirst(event, cacheName, kept) {
   const { request } = event;
   const cache = await caches.open(cacheName);
-  const hit = await cache.match(request);
+  const hit =
+    (kept && (await (await caches.open(kept)).match(request, { ignoreVary: true }))) ||
+    (await cache.match(request));
   if (hit) return hit;
   const res = await fetch(request);
   if (isCacheable(res)) event.waitUntil(put(cacheName, request, res.clone()));
   return res;
 }
 
-async function staleWhileRevalidate(event, cacheName) {
+async function staleWhileRevalidate(event, cacheName, kept) {
   const { request } = event;
   const cache = await caches.open(cacheName);
-  const hit = await cache.match(request, { ignoreVary: true });
+  const hit =
+    (await cache.match(request, { ignoreVary: true })) ||
+    (kept && (await (await caches.open(kept)).match(request, { ignoreVary: true }))) ||
+    null;
   const network = fetch(request).then((res) => {
     // Return at once; storing the body must not hold back the response.
     if (isCacheable(res)) event.waitUntil(put(cacheName, request, res.clone()));
@@ -232,6 +247,7 @@ async function networkFirstPage(event) {
   const fromCache = async () =>
     (await cache.match(request)) ||
     (await cache.match(request, { ignoreSearch: true })) ||
+    (await (await caches.open(CACHES.kept)).match(request, { ignoreSearch: true, ignoreVary: true })) ||
     null;
 
   // Race the network against a timeout. On timeout serve the cached copy if
@@ -259,6 +275,78 @@ async function networkFirstPage(event) {
       headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
     });
   }
+}
+
+// --- Offline copies of Saved and My kitchen ---------------------------------
+// The app (components/OfflineKeeper.jsx) posts the same-site URLs it wants
+// kept: recipe pages and JSON in `pages`, photos in `photos`. The worker
+// downloads what is missing, a few at a time, and drops what is no longer
+// listed. Requests line up so only the newest list is worked on.
+let keepJob = Promise.resolve();
+let keepNext = null;
+
+function sameSitePaths(list, max) {
+  const out = [];
+  if (!Array.isArray(list)) return out;
+  for (const raw of list) {
+    if (typeof raw !== "string" || !raw.startsWith("/") || raw.startsWith("//")) continue;
+    out.push(new URL(raw, self.location.origin).href);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+function keepOffline(data, source) {
+  keepNext = {
+    pages: sameSitePaths(data && data.pages, KEEP_MAX_PAGES),
+    photos: sameSitePaths(data && data.photos, KEEP_MAX_PHOTOS),
+    source,
+  };
+  keepJob = keepJob.then(async () => {
+    const job = keepNext;
+    keepNext = null;
+    if (!job) return;
+    const pages = await mirror(CACHES.kept, job.pages);
+    // Ask for webp like an <img> does (the optimizer picks the format by Accept).
+    const photos = await mirror(CACHES.keptPhotos, job.photos, {
+      headers: { Accept: "image/webp,image/*,*/*;q=0.8" },
+    });
+    try {
+      job.source &&
+        job.source.postMessage({ type: "OFFLINE_STATUS", pages, photos, wanted: job.pages.length });
+    } catch {
+      // the page went away
+    }
+  });
+  return keepJob.catch(() => {});
+}
+
+// Makes cache `name` hold exactly `urls` (as far as the network allows).
+// Returns how many of them are stored.
+async function mirror(name, urls, init = {}) {
+  const cache = await caches.open(name);
+  const want = new Set(urls);
+  const have = new Set((await cache.keys()).map((r) => r.url));
+  await Promise.all([...have].filter((u) => !want.has(u)).map((u) => cache.delete(u)));
+  const missing = urls.filter((u) => !have.has(u));
+  let stored = urls.length - missing.length;
+  let next = 0;
+  const worker = async () => {
+    while (next < missing.length) {
+      const url = missing[next++];
+      try {
+        const res = await fetch(url, { credentials: "same-origin", ...init });
+        if (isCacheable(res)) {
+          await cache.put(url, res);
+          stored += 1;
+        }
+      } catch {
+        // offline or quota: try again with the next list
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: KEEP_PARALLEL }, worker));
+  return stored;
 }
 
 // --- Update alerts (Web Push) -------------------------------------------

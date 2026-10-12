@@ -22,6 +22,24 @@ const THUMB_SIZES = "76px";
 export const optimized = (src, w, q) =>
   `/_next/image?url=${encodeURIComponent(src)}&w=${w}&q=${q}`;
 
+/**
+ * URLs the browser loads for a photo on this screen: as a card, as the recipe
+ * page hero and as a small My kitchen thumbnail. Mirrors CARD_SIZES,
+ * HERO_SIZES and THUMB_SIZES (a browser takes the first width that covers
+ * the drawn size times the pixel ratio). Used to keep photos for offline.
+ */
+export function photoUrls(src, { width, dpr }) {
+  const card =
+    width >= 1240 ? 280 : width >= 951 ? width * 0.24 : width >= 721 ? width * 0.31 : width / 2 - 23;
+  const hero = Math.min(width, 1176);
+  const pick = (css) => WIDTHS.find((w) => w >= css * dpr) ?? WIDTHS[WIDTHS.length - 1];
+  return {
+    card: optimized(src, pick(card), QUALITY),
+    hero: optimized(src, pick(hero), QUALITY),
+    thumb: optimized(src, pick(76), QUALITY),
+  };
+}
+
 function defaultSizes(className) {
   if (/\b(recipe-hero|hero-image)\b/.test(className)) return HERO_SIZES;
   if (/\bpool-thumb\b/.test(className)) return THUMB_SIZES;

@@ -8,6 +8,7 @@ import { useKitchen } from "../lib/store";
 import { recipeIndexQuery } from "../lib/queries";
 import ResumeChip from "./ResumeChip";
 import { openScanner } from "./share/QrScanner";
+import { OPEN, tabTypes } from "../lib/transitions";
 
 const ICON_PROPS = {
   width: 24,
@@ -83,7 +84,7 @@ export default function NavBar() {
     try {
       const list = await queryClient.ensureQueryData(recipeIndexQuery);
       const pick = list[Math.floor(Math.random() * list.length)];
-      if (pick) router.push(`/recipes/${pick.slug}`);
+      if (pick) router.push(`/recipes/${pick.slug}`, { transitionTypes: OPEN });
     } catch {
       // index unavailable (offline, not cached yet): do nothing
     } finally {
@@ -95,7 +96,7 @@ export default function NavBar() {
     <>
       <header className="nb-top">
         <div className="container nb-top-inner">
-          <Link href="/" scroll={false} className="nb-brand">
+          <Link href="/" scroll={false} transitionTypes={tabTypes(pathname, "/")} className="nb-brand">
             mob<span> / my kitchen</span>
           </Link>
 
@@ -107,6 +108,7 @@ export default function NavBar() {
                   key={href}
                   href={href}
                   scroll={href === "/" ? false : undefined}
+                  transitionTypes={tabTypes(pathname, href)}
                   aria-current={active ? "page" : undefined}
                   className={`nb-link ${active ? "active" : ""}`}
                 >
@@ -146,6 +148,7 @@ export default function NavBar() {
               key={href}
               href={href}
               scroll={href === "/" ? false : undefined}
+              transitionTypes={tabTypes(pathname, href)}
               aria-current={active ? "page" : undefined}
               className={`nb-tab ${active ? "active" : ""}`}
             >

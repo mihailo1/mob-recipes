@@ -9,6 +9,7 @@ import SyncEngine from "../components/SyncEngine";
 import Providers from "../components/Providers";
 import AppNotices from "../components/AppNotices";
 import GlobalOverlays from "../components/GlobalOverlays";
+import OfflineKeeper from "../components/OfflineKeeper";
 import { APP_VERSION } from "../lib/version";
 
 export const metadata = {
@@ -35,13 +36,17 @@ export const metadata = {
   },
 };
 
-// No dark theme in globals.css yet, so a single theme color.
+// Matches --bg in app/globals.css for the light and the dark theme.
 export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: "#fafaf6",
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafaf6" },
+    { media: "(prefers-color-scheme: dark)", color: "#131511" },
+  ],
 };
 
 export default function RootLayout({ children }) {
@@ -56,6 +61,7 @@ export default function RootLayout({ children }) {
             <AppNotices />
             <GlobalOverlays />
             <SyncEngine />
+            <OfflineKeeper />
           </KitchenProvider>
         </Providers>
         <SWRegister />

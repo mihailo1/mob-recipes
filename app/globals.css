@@ -155,7 +155,7 @@ select {
   height: 30px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--glass-strong);
   backdrop-filter: blur(2px);
   color: var(--ink);
   font-size: 15px;
@@ -198,7 +198,7 @@ select {
   background: linear-gradient(
     100deg,
     rgba(255, 255, 255, 0) 30%,
-    rgba(255, 255, 255, 0.6) 50%,
+    var(--shimmer) 50%,
     rgba(255, 255, 255, 0) 70%
   );
   background-size: 200% 100%;
@@ -296,7 +296,7 @@ select {
 }
 
 .chip.time {
-  background: #fdece5;
+  background: var(--warm);
   color: var(--accent);
 }
 
@@ -344,7 +344,7 @@ select {
 }
 
 .chip-removable:hover {
-  background: #fdece5;
+  background: var(--warm);
   color: var(--accent);
 }
 
@@ -369,7 +369,7 @@ select {
 }
 
 .pill-btn.is-active {
-  background: #fdece5;
+  background: var(--warm);
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -410,7 +410,7 @@ select {
 }
 
 .ingredient-mark {
-  background: #fdece5;
+  background: var(--warm);
   color: var(--accent);
   border-radius: 4px;
   padding: 0 3px;
@@ -667,6 +667,37 @@ select {
   --chip-bg: #edf0e6;
   --radius: 18px;
   --shadow: none;
+  color-scheme: light dark;
+  --surface: #fff;
+  --surface-2: #fafbf7;
+  --soft: #f2f4e9;
+  --empty-bg: #f0f2e7;
+  --warm: #fdece5;
+  --lime: #e7edb3;
+  --lime-ink: #293021;
+  --lime-line: #bac681;
+  --hero-bg: #e9efb6;
+  --mark-bg: #eef1da;
+  --mark-ink: #384329;
+  --all-a: #f1f4dc;
+  --all-b: #dfe7a6;
+  --focus: #718a3a;
+  --check: #46552d;
+  --primary: #252d21;
+  --primary-hover: #475437;
+  --primary-ink: #fff;
+  --danger: #b3261e;
+  --danger-soft: #fbe9e7;
+  --error-bg: #fbefe6;
+  --error-ink: #8a3b17;
+  --ok: #3f8f6b;
+  /* Folder colors are mixed into this for soft tints. */
+  --tint: #fff;
+  --glass: rgba(250, 250, 246, 0.86);
+  --glass-strong: rgba(255, 255, 255, 0.9);
+  --line-strong: rgba(32, 34, 29, 0.24);
+  --backdrop: rgba(24, 26, 20, 0.36);
+  --shimmer: rgba(255, 255, 255, 0.6);
 }
 body {
   font-family: Arial, Helvetica, sans-serif;
@@ -690,7 +721,7 @@ button:disabled {
   cursor: default;
 }
 :focus-visible {
-  outline: 3px solid #718a3a;
+  outline: 3px solid var(--focus);
   outline-offset: 4px;
 }
 .container {
@@ -723,7 +754,7 @@ button:disabled {
   min-height: 330px;
   border-radius: 22px;
   overflow: hidden;
-  background: #e9efb6;
+  background: var(--hero-bg);
 }
 .hero-copy {
   padding: 36px 42px;
@@ -745,15 +776,15 @@ button:disabled {
   justify-content: center;
   border: 0;
   border-radius: 99px;
-  background: #252d21;
-  color: white;
+  background: var(--primary);
+  color: var(--primary-ink);
   padding: 15px 23px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
 }
 .primary-btn:hover {
-  background: #475437;
+  background: var(--primary-hover);
 }
 .hero-photo {
   position: relative;
@@ -790,7 +821,7 @@ button:disabled {
 }
 .search-panel {
   margin: 32px 0;
-  background: white;
+  background: var(--surface);
   padding: 24px;
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -811,7 +842,7 @@ button:disabled {
 }
 .search-input {
   border-radius: 10px;
-  background: #fafbf7;
+  background: var(--surface-2);
   padding: 15px 17px;
   min-width: 0;
 }
@@ -840,9 +871,9 @@ select {
   min-height: 44px;
 }
 .pill-btn.is-active {
-  background: #e7edb3;
-  border-color: #bac681;
-  color: #293021;
+  background: var(--lime);
+  border-color: var(--lime-line);
+  color: var(--lime-ink);
 }
 .results-heading {
   display: flex;
@@ -893,11 +924,11 @@ select {
 .card .chip {
   padding: 3px 7px;
   font-size: 10px;
-  background: #edf0e6;
+  background: var(--chip-bg);
 }
 .card .chip.time {
-  color: #303b24;
-  background: #e7edb3;
+  color: var(--lime-ink);
+  background: var(--lime);
 }
 .icon-btn {
   width: 38px;
@@ -906,8 +937,8 @@ select {
   box-shadow: 0 2px 8px #0001;
 }
 .icon-btn.is-active {
-  background: #e7edb3;
-  color: #26321e;
+  background: var(--lime);
+  color: var(--lime-ink);
 }
 .card-actions {
   top: 12px;
@@ -948,7 +979,7 @@ select {
   gap: 40px;
 }
 .recipe-layout > div {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 26px;
@@ -965,7 +996,7 @@ select {
   cursor: pointer;
 }
 .ingredient-list input {
-  accent-color: #46552d;
+  accent-color: var(--check);
   width: 18px;
   height: 18px;
   flex: none;
@@ -981,15 +1012,15 @@ select {
   border-bottom: 1px solid var(--border);
 }
 .step-list li::before {
-  background: #e7edb3;
-  color: #293021;
+  background: var(--lime);
+  color: var(--lime-ink);
   width: 32px;
   height: 32px;
   font-size: 14px;
 }
 .ingredient-mark {
-  background: #eef1da;
-  color: #384329;
+  background: var(--mark-bg);
+  color: var(--mark-ink);
 }
 .step-ingredients {
   display: flex;
@@ -998,7 +1029,7 @@ select {
   margin-top: 12px;
 }
 .step-ingredients small {
-  background: #f2f4e9;
+  background: var(--soft);
   border-radius: 7px;
   padding: 5px 9px;
   font-size: 11px;
@@ -1013,7 +1044,7 @@ select {
   grid-template-columns: 1fr 1.15fr;
 }
 .pool-layout > div {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 24px;
@@ -1044,7 +1075,7 @@ select {
 .progress-bar {
   width: 100%;
   height: 6px;
-  accent-color: #576636;
+  accent-color: var(--check);
   margin: 4px 0 20px;
 }
 .pool-tabs {
@@ -1053,8 +1084,8 @@ select {
   margin: 12px 0 20px;
 }
 .pool-tabs button[aria-pressed="true"] {
-  background: #e7edb3;
-  border-color: #bec889;
+  background: var(--lime);
+  border-color: var(--lime-line);
 }
 .pool-layout[data-view="recipes"] > div:last-child,
 .pool-layout[data-view="shopping"] > div:first-child {
@@ -1066,7 +1097,7 @@ select {
   max-width: 800px;
 }
 .empty {
-  background: #f0f2e7;
+  background: var(--empty-bg);
   padding: 60px 24px;
   border-radius: 20px;
   margin: 24px 0;
@@ -1098,18 +1129,6 @@ select {
 }
 .cook-toggle {
   margin-left: auto;
-}
-.recipe-layout.cooking {
-  grid-template-columns: 1fr;
-  max-width: 850px;
-  margin-left: auto;
-  margin-right: auto;
-}
-.recipe-layout.cooking > div:first-child {
-  display: none;
-}
-.recipe-layout.cooking .step-list li {
-  font-size: 22px;
 }
 .cook-progress {
   font-size: 13px;
@@ -1244,9 +1263,6 @@ select {
   .cook-toggle {
     margin-left: 0;
   }
-  .recipe-layout.cooking .step-list li {
-    font-size: 19px;
-  }
   .pool-layout > div {
     padding: 20px;
   }
@@ -1370,7 +1386,7 @@ h3,
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--glass-strong);
   color: var(--ink);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
   pointer-events: none;
@@ -1801,7 +1817,7 @@ h3,
   display: flex;
   padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom)
     env(safe-area-inset-left);
-  background: rgba(250, 250, 246, 0.8);
+  background: var(--glass);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
   border-top: 0.5px solid var(--nb-hairline);
@@ -1841,7 +1857,7 @@ html[data-vp-hide] .nb-resume {
   transition: background-color 0.2s;
 }
 .nb-tab.active .nb-tab-icon {
-  background: #e7edb3;
+  background: var(--lime);
 }
 .nb-tab:active .nb-tab-icon {
   background: var(--chip-bg);
@@ -1877,7 +1893,7 @@ html[data-vp-hide] .nb-resume {
   align-items: center;
   border: 0.5px solid var(--nb-hairline);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--glass-strong);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
   box-shadow: 0 8px 24px rgba(32, 34, 29, 0.14);
@@ -1979,7 +1995,7 @@ html[data-vp-hide] .nb-resume {
     position: sticky;
     top: 0;
     z-index: 40;
-    background: rgba(250, 250, 246, 0.86);
+    background: var(--glass);
     -webkit-backdrop-filter: saturate(180%) blur(16px);
     backdrop-filter: saturate(180%) blur(16px);
     border-bottom: 1px solid var(--border);
@@ -2009,7 +2025,7 @@ html[data-vp-hide] .nb-resume {
     color: var(--ink);
   }
   .nb-link.active {
-    background: #e7edb3;
+    background: var(--lime);
     color: var(--ink);
     font-weight: 600;
   }
@@ -2189,7 +2205,7 @@ html[data-vp-hide] .nb-resume {
   padding: 12px 12px 12px 16px;
   border: 0.5px solid var(--nb-hairline);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--glass-strong);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
   box-shadow: 0 8px 24px rgba(32, 34, 29, 0.14);
@@ -2378,7 +2394,7 @@ html[data-vp-hide] .nb-resume {
 .bs-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(24, 26, 20, 0.36);
+  background: var(--backdrop);
   opacity: 0;
   transition: opacity 0.32s ease;
   touch-action: none;
@@ -2425,7 +2441,7 @@ html[data-vp-hide] .nb-resume {
   height: 5px;
   margin: 0 auto 6px;
   border-radius: 999px;
-  background: rgba(32, 34, 29, 0.2);
+  background: var(--line-strong);
 }
 .bs-header {
   display: flex;
@@ -2650,13 +2666,13 @@ html[data-resume] .toast-host {
   background: linear-gradient(150deg, var(--fd-c), var(--fd-c));
   background: linear-gradient(
     150deg,
-    color-mix(in oklab, var(--fd-c) 16%, #fff) 0%,
-    color-mix(in oklab, var(--fd-c) 42%, #fff) 100%
+    color-mix(in oklab, var(--fd-c) 16%, var(--tint)) 0%,
+    color-mix(in oklab, var(--fd-c) 42%, var(--tint)) 100%
   );
 }
 .fd-cover.is-empty.is-all {
-  background: linear-gradient(150deg, #f1f4dc 0%, #dfe7a6 100%);
-  color: #303b24;
+  background: linear-gradient(150deg, var(--all-a) 0%, var(--all-b) 100%);
+  color: var(--lime-ink);
 }
 .fd-cover-emoji {
   font-size: 46px;
@@ -2678,7 +2694,7 @@ html[data-resume] .toast-host {
   background: var(--fd-c);
   color: #fff;
   box-shadow:
-    0 0 0 2px #fff,
+    0 0 0 2px var(--surface),
     0 2px 8px rgba(32, 34, 29, 0.28);
   font-size: 17px;
   line-height: 1;
@@ -2777,7 +2793,7 @@ html[data-resume] .toast-host {
   outline: none;
 }
 .fd-tile:focus-visible .fd-cover {
-  outline: 3px solid #718a3a;
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 .fd-tile-name {
@@ -2804,7 +2820,7 @@ html[data-resume] .toast-host {
 .fd-cover-new {
   place-items: center;
   background: transparent;
-  border: 1.5px dashed rgba(32, 34, 29, 0.24);
+  border: 1.5px dashed var(--line-strong);
   box-shadow: none;
   color: var(--ink-muted);
 }
@@ -2857,8 +2873,8 @@ html[data-resume] .toast-host {
   background: linear-gradient(120deg, var(--surface), var(--surface));
   background: linear-gradient(
     120deg,
-    color-mix(in oklab, var(--fd-c) 10%, #fff) 0%,
-    color-mix(in oklab, var(--fd-c) 4%, #fff) 100%
+    color-mix(in oklab, var(--fd-c) 10%, var(--tint)) 0%,
+    color-mix(in oklab, var(--fd-c) 4%, var(--tint)) 100%
   );
   border: 1px solid var(--border);
   border-color: color-mix(in oklab, var(--fd-c) 18%, var(--border));
@@ -2877,8 +2893,8 @@ html[data-resume] .toast-host {
   background: var(--chip-bg);
   background: linear-gradient(
     150deg,
-    color-mix(in oklab, var(--fd-c) 20%, #fff),
-    color-mix(in oklab, var(--fd-c) 46%, #fff)
+    color-mix(in oklab, var(--fd-c) 20%, var(--tint)),
+    color-mix(in oklab, var(--fd-c) 46%, var(--tint))
   );
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
@@ -2917,7 +2933,7 @@ html[data-resume] .toast-host {
   justify-content: center;
   border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--glass-strong);
   color: var(--ink);
   box-shadow: 0 1px 3px rgba(32, 34, 29, 0.1);
   cursor: pointer;
@@ -2973,8 +2989,8 @@ html[data-resume] .toast-host {
   background: var(--chip-bg);
   background: linear-gradient(
     150deg,
-    color-mix(in oklab, var(--fd-c) 14%, #fff),
-    color-mix(in oklab, var(--fd-c) 36%, #fff)
+    color-mix(in oklab, var(--fd-c) 14%, var(--tint)),
+    color-mix(in oklab, var(--fd-c) 36%, var(--tint))
   );
   transform: rotate(-4deg);
   margin-bottom: 18px;
@@ -3110,7 +3126,7 @@ html[data-resume] .toast-host {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  border: 1.5px solid rgba(32, 34, 29, 0.24);
+  border: 1.5px solid var(--line-strong);
   color: transparent;
   transition:
     background-color 0.18s ease,
@@ -3142,7 +3158,7 @@ html[data-resume] .toast-host {
   align-items: center;
   justify-content: center;
   border-radius: 11px;
-  border: 1.5px dashed rgba(48, 59, 36, 0.4);
+  border: 1.5px dashed var(--line-strong);
   color: var(--accent);
 }
 .fd-create {
@@ -3176,8 +3192,8 @@ html[data-resume] .toast-host {
   background: var(--chip-bg);
   background: linear-gradient(
     150deg,
-    color-mix(in oklab, var(--fd-c) 18%, #fff),
-    color-mix(in oklab, var(--fd-c) 44%, #fff)
+    color-mix(in oklab, var(--fd-c) 18%, var(--tint)),
+    color-mix(in oklab, var(--fd-c) 44%, var(--tint))
   );
   transition: background 0.2s ease;
 }
@@ -3237,7 +3253,7 @@ html[data-resume] .toast-host {
   transform: scale(0.9);
 }
 .fd-emoji.is-on {
-  background: color-mix(in oklab, var(--fd-c) 20%, #fff);
+  background: color-mix(in oklab, var(--fd-c) 20%, var(--tint));
   box-shadow: inset 0 0 0 2px var(--fd-c);
 }
 .fd-colors {
@@ -3274,8 +3290,8 @@ html[data-resume] .toast-host {
   margin: 14px 0 0;
   padding: 10px 12px;
   border-radius: 12px;
-  background: #fbefe6;
-  color: #8a3b17;
+  background: var(--error-bg);
+  color: var(--error-ink);
   font-size: 13px;
 }
 .fd-form-actions {
@@ -3298,8 +3314,8 @@ html[data-resume] .toast-host {
   transform: scale(0.97);
 }
 .fd-btn-primary {
-  background: #252d21;
-  color: #fff;
+  background: var(--primary);
+  color: var(--primary-ink);
 }
 .fd-btn-ghost {
   background: var(--chip-bg);
@@ -3330,7 +3346,7 @@ html[data-resume] .toast-host {
   border-radius: 10px;
   font-size: 19px;
   background: var(--chip-bg);
-  background: color-mix(in oklab, var(--fd-c) 26%, #fff);
+  background: color-mix(in oklab, var(--fd-c) 26%, var(--tint));
 }
 .fd-actions-name {
   min-width: 0;
@@ -3373,7 +3389,7 @@ html[data-resume] .toast-host {
 }
 .fd-menu-item.is-danger,
 .fd-menu-item.is-danger svg {
-  color: #b3261e;
+  color: var(--danger);
 }
 .fd-confirm {
   display: flex;
@@ -3390,8 +3406,8 @@ html[data-resume] .toast-host {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: #fbe9e7;
-  color: #b3261e;
+  background: var(--danger-soft);
+  color: var(--danger);
   margin-bottom: 4px;
 }
 .fd-confirm-title {
@@ -3598,7 +3614,7 @@ html[data-resume] .toast-host {
 .sc-done {
   display: block;
   margin: 0;
-  color: #3f8f6b;
+  color: var(--ok);
 }
 
 /* Sharing (components/share/*) */
@@ -3644,7 +3660,7 @@ html[data-resume] .toast-host {
 }
 .sh-error {
   margin: 0;
-  color: #b3261e;
+  color: var(--danger);
   font-size: 14px;
 }
 .sh-url {
@@ -3664,7 +3680,7 @@ html[data-resume] .toast-host {
   outline-offset: 1px;
 }
 .sh-input[aria-invalid="true"] {
-  border-color: #b3261e;
+  border-color: var(--danger);
 }
 .sh-note {
   margin: 0;
@@ -3792,6 +3808,12 @@ html[data-resume] .toast-host {
   border: 1px solid var(--border);
   border-radius: 16px;
   background: #fff;
+  /* Always a white card (scanners like dark on light), so the text inside
+     keeps the light theme colors in the dark theme too. */
+  color: #20221d;
+  --ink: #20221d;
+  --ink-muted: #686b61;
+  --border: #e0e3d8;
 }
 .qr-code {
   display: block;
@@ -3826,7 +3848,7 @@ html[data-resume] .toast-host {
 }
 .sh-linked {
   font-weight: 800;
-  color: #3f8f6b;
+  color: var(--ok);
 }
 .qr-scan {
   display: flex;
@@ -3854,4 +3876,648 @@ html[data-resume] .toast-host {
   border: 3px solid rgba(255, 255, 255, 0.9);
   border-radius: 18px;
   box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.25);
+}
+
+/* ---------------------------------------------------------------------------
+   Page transitions (View Transitions API through React <ViewTransition>,
+   see lib/transitions.js and components/PageTransition.jsx). A recipe photo
+   morphs between the card and the recipe page; tabs slide; opening a recipe
+   fades the new page up. Browsers without the API skip all of this.
+   ------------------------------------------------------------------------ */
+::view-transition {
+  /* Taps during the short animation reach the new page. */
+  pointer-events: none;
+}
+/* The bars stay put while the page under them moves. */
+.nb-top {
+  view-transition-name: nb-top;
+}
+.nb-tabbar {
+  view-transition-name: nb-tabbar;
+}
+::view-transition-group(nb-top),
+::view-transition-group(nb-tabbar) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(nb-top),
+::view-transition-old(nb-tabbar) {
+  display: none;
+}
+::view-transition-new(nb-top),
+::view-transition-new(nb-tabbar) {
+  animation: none;
+}
+
+::view-transition-group(.morph) {
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+::view-transition-image-pair(.morph) {
+  animation-name: vt-soften;
+}
+::view-transition-old(.morph),
+::view-transition-new(.morph) {
+  /* The card is square, the hero is wide: keep the photo filled, no stretch. */
+  height: 100%;
+  object-fit: cover;
+}
+
+::view-transition-old(.tab-forward) {
+  --vt-x: -48px;
+  animation:
+    150ms ease-in both vt-fade reverse,
+    380ms cubic-bezier(0.32, 0.72, 0, 1) both vt-slide reverse;
+}
+::view-transition-new(.tab-forward) {
+  --vt-x: 48px;
+  animation:
+    220ms ease-out 120ms both vt-fade,
+    380ms cubic-bezier(0.32, 0.72, 0, 1) both vt-slide;
+}
+::view-transition-old(.tab-back) {
+  --vt-x: 48px;
+  animation:
+    150ms ease-in both vt-fade reverse,
+    380ms cubic-bezier(0.32, 0.72, 0, 1) both vt-slide reverse;
+}
+::view-transition-new(.tab-back) {
+  --vt-x: -48px;
+  animation:
+    220ms ease-out 120ms both vt-fade,
+    380ms cubic-bezier(0.32, 0.72, 0, 1) both vt-slide;
+}
+::view-transition-old(.nav-forward),
+::view-transition-old(.nav-back) {
+  animation: 150ms ease-in both vt-fade reverse;
+}
+::view-transition-new(.nav-forward) {
+  animation:
+    240ms ease-out 100ms both vt-fade,
+    420ms cubic-bezier(0.32, 0.72, 0, 1) both vt-rise;
+}
+::view-transition-new(.nav-back) {
+  animation: 220ms ease-out 80ms both vt-fade;
+}
+
+@keyframes vt-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes vt-slide {
+  from {
+    translate: var(--vt-x) 0;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+@keyframes vt-rise {
+  from {
+    translate: 0 14px;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+@keyframes vt-soften {
+  35% {
+    filter: blur(2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Scroll driven animations (CSS animation-timeline, iOS 26+). Each one is an
+   extra: without support the page looks as before.
+   ------------------------------------------------------------------------ */
+.read-progress {
+  display: none;
+}
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* How far down the recipe you are: a thin line on the tab bar edge
+       (phone) or under the top bar (desktop). */
+    .read-progress {
+      display: block;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: calc(var(--nb-tabbar-h) + env(safe-area-inset-bottom));
+      height: 2px;
+      z-index: 60;
+      background: var(--focus);
+      transform-origin: 0 50%;
+      pointer-events: none;
+      animation: grow-x linear both;
+      animation-timeline: scroll(root block);
+    }
+
+    /* The hero photo drifts slower than the page as it scrolls away. */
+    .recipe-hero .img-main {
+      animation: hero-drift linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 100%;
+    }
+
+    /* Cards rise in as they come into view. */
+    .grid .card {
+      animation: card-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
+    .read-progress {
+      top: calc(env(safe-area-inset-top) + 72px);
+      bottom: auto;
+    }
+    /* The sticky top bar gets a soft shadow once the page moves. */
+    .nb-top {
+      animation: nb-lift linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 80px;
+    }
+  }
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes hero-drift {
+  to {
+    translate: 0 22%;
+    scale: 1.06;
+  }
+}
+@keyframes card-rise {
+  from {
+    opacity: 0.2;
+    translate: 0 28px;
+    scale: 0.97;
+  }
+}
+@keyframes nb-lift {
+  to {
+    box-shadow: 0 10px 30px rgba(24, 26, 20, 0.08);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Entry animations with @starting-style: new rows fade and slide in when
+   they appear (a recipe added to My kitchen, a new folder, the first badge).
+   ------------------------------------------------------------------------ */
+@media (prefers-reduced-motion: no-preference) {
+  .shopping-list li,
+  .pool-recipe-item,
+  .shop-aisle,
+  .fd-tile,
+  .offline-note {
+    transition:
+      opacity 0.28s ease,
+      translate 0.36s cubic-bezier(0.32, 0.72, 0, 1),
+      scale 0.36s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  @starting-style {
+    .shopping-list li,
+    .pool-recipe-item,
+    .shop-aisle,
+    .offline-note {
+      opacity: 0;
+      translate: 0 10px;
+    }
+    .fd-tile {
+      opacity: 0;
+      scale: 0.9;
+    }
+  }
+  .nb-badge {
+    transition: scale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @starting-style {
+    .nb-badge {
+      scale: 0;
+    }
+  }
+}
+
+/* Long lists: the browser skips drawing photos that are far off screen
+   (content-visibility). The box keeps its exact size from aspect-ratio, so
+   nothing jumps and scroll restoring stays exact. */
+.grid .card-media {
+  aspect-ratio: 1 / 1;
+  content-visibility: auto;
+}
+/* Coming back from a recipe: its photo morphs back into this card, which
+   needs the card drawn in the very first frame. */
+.grid .card.is-last-opened .card-media {
+  content-visibility: visible;
+}
+
+/* Nicer line breaks: balanced headings, no lonely last words in text. */
+h1,
+h2,
+h3,
+.card-title,
+.recipe-title {
+  text-wrap: balance;
+}
+p,
+li,
+.recipe-desc {
+  text-wrap: pretty;
+}
+
+/* ---------------------------------------------------------------------------
+   Ingredient amounts in method steps: a tap opens a bubble (Popover API),
+   placed above the word with CSS anchor positioning (components/cook/
+   StepText.jsx). Without anchor positioning the bubble sits at the bottom.
+   ------------------------------------------------------------------------ */
+button.ingredient-mark {
+  font: inherit;
+  font-weight: 600;
+  line-height: inherit;
+  border: 0;
+  margin: 0;
+  display: inline;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
+}
+.ing-pop {
+  margin: 0;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(32, 34, 29, 0.96);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(24, 26, 20, 0.22);
+  /* Fallback placement: bottom center, above the tab bar. */
+  position: fixed;
+  inset: auto 0 calc(var(--nb-tabbar-h) + env(safe-area-inset-bottom) + 20px);
+  width: fit-content;
+  max-width: calc(100vw - 32px);
+  margin-inline: auto;
+  opacity: 0;
+  translate: 0 6px;
+  transition:
+    opacity 0.16s ease,
+    translate 0.2s ease,
+    overlay 0.2s allow-discrete,
+    display 0.2s allow-discrete;
+}
+.ing-pop:popover-open {
+  opacity: 1;
+  translate: 0 0;
+}
+@starting-style {
+  .ing-pop:popover-open {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+@supports (anchor-name: --a) {
+  .ing-pop {
+    inset: auto;
+    margin: 0 0 8px;
+    position-area: top;
+    position-try-fallbacks: flip-block;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  .ing-pop {
+    background: rgba(236, 238, 230, 0.96);
+    color: #1b2015;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Cooking view: full screen, one step per screen (components/cook/
+   CookMode.jsx). Slides snap sideways; the bar on top follows the swipe
+   (scroll driven when supported, by step otherwise).
+   ------------------------------------------------------------------------ */
+.ck {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  timeline-scope: --ck;
+  transition:
+    opacity 0.22s ease,
+    translate 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@starting-style {
+  .ck {
+    opacity: 0;
+    translate: 0 24px;
+  }
+}
+.ck.is-closing {
+  opacity: 0;
+  translate: 0 24px;
+  transition-duration: 0.18s;
+}
+.ck-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px 8px;
+}
+.ck-close {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 0;
+  background: var(--chip-bg);
+  color: var(--ink);
+  cursor: pointer;
+}
+.ck-heading {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ck-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+}
+.ck-name {
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ck-bar {
+  height: 4px;
+  margin: 0 16px;
+  border-radius: 99px;
+  background: var(--chip-bg);
+  overflow: hidden;
+}
+.ck-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--focus);
+  border-radius: inherit;
+  transform-origin: 0 50%;
+  transform: scaleX(var(--ck-progress, 0));
+  transition: transform 0.3s ease;
+}
+.ck-track {
+  flex: 1;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  scroll-timeline: --ck x;
+}
+.ck-track::-webkit-scrollbar {
+  display: none;
+}
+@supports (animation-timeline: scroll()) {
+  .ck-bar-fill {
+    transition: none;
+    animation: grow-x linear both;
+    animation-timeline: --ck;
+  }
+}
+.ck-slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.ck-body {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 24px 32px;
+}
+.ck-kicker {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--focus);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ck-title {
+  margin: 0 0 8px;
+  font-size: 30px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.ck-note {
+  margin: 0 0 20px;
+  color: var(--ink-muted);
+}
+.ck-text {
+  margin: 0;
+  font-size: clamp(22px, 5.6vw, 30px);
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+.ck-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+}
+.ck-chips li {
+  background: var(--lime);
+  color: var(--lime-ink);
+  border-radius: 10px;
+  padding: 6px 11px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.ck-have {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ck-have li {
+  border-bottom: 1px solid var(--border);
+}
+.ck-have label {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  font-size: 18px;
+  cursor: pointer;
+}
+.ck-have input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  accent-color: var(--check);
+}
+.ck-have label.is-on span {
+  color: var(--ink-muted);
+  text-decoration: line-through;
+}
+.ck-done .ck-body {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.ck-done-emoji {
+  font-size: 64px;
+  margin-bottom: 12px;
+}
+.ck-nav {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+}
+.ck-nav .pill-btn,
+.ck-nav .primary-btn {
+  min-height: 52px;
+  padding-inline: 24px;
+  font-size: 17px;
+}
+.ck-next {
+  flex: 1;
+  max-width: 320px;
+  gap: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+   Shopping list by aisle and "Send list" (app/pool/page.jsx)
+   ------------------------------------------------------------------------ */
+.shop-send {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.shop-aisle + .shop-aisle {
+  margin-top: 18px;
+}
+.shop-aisle-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 0 2px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.shop-aisle-count {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.shop-aisle-title.is-done {
+  opacity: 0.6;
+}
+.shop-aisle-title.is-done .shop-aisle-count {
+  color: var(--ok);
+}
+
+.offline-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+/* ---------------------------------------------------------------------------
+   Dark theme: follows the phone's setting. Same olive palette, lit from
+   below. Photos, the QR code box and the toast keep their own colors. Last in
+   the file so it wins over every :root above.
+   ------------------------------------------------------------------------ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131511;
+    --surface: #1c1f19;
+    --surface-2: #181a15;
+    --ink: #eceee6;
+    --ink-muted: #a2a698;
+    --accent: #dfe8a6;
+    --accent-ink: #1b2015;
+    --border: #2d3128;
+    --chip-bg: #262a22;
+    --soft: #23271f;
+    --empty-bg: #1c1f19;
+    --warm: #3a251b;
+    --lime: #3a4423;
+    --lime-ink: #e3ebb4;
+    --lime-line: #56632f;
+    --hero-bg: #252c16;
+    --mark-bg: #2f3720;
+    --mark-ink: #e1e9b0;
+    --all-a: #252c16;
+    --all-b: #3a4423;
+    --focus: #b3c96a;
+    --check: #b3c96a;
+    --primary: #e3ebb4;
+    --primary-hover: #cfd99a;
+    --primary-ink: #1b2015;
+    --danger: #ff8a80;
+    --danger-soft: #3b1f1c;
+    --error-bg: #3a2418;
+    --error-ink: #f3b68f;
+    --ok: #74d1a2;
+    --tint: #1c1f19;
+    --glass: rgba(19, 21, 17, 0.84);
+    --glass-strong: rgba(40, 44, 36, 0.92);
+    --line-strong: rgba(236, 238, 230, 0.26);
+    --backdrop: rgba(0, 0, 0, 0.55);
+    --shimmer: rgba(255, 255, 255, 0.07);
+    --nb-hairline: rgba(236, 238, 230, 0.14);
+  }
+  /* Photos a touch dimmer so they do not glare at night. */
+  .img-main {
+    filter: brightness(0.94);
+  }
 }

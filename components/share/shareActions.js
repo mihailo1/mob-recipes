@@ -41,17 +41,35 @@ function legacyCopy(text) {
   return ok;
 }
 
-export async function copyLink(url) {
+/** Copies text and says so in a toast. Returns "copied" or "failed". */
+export async function copyText(text, { done = "Copied", failed = "Couldn't copy" } = {}) {
   let ok = false;
   try {
-    await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(text);
     ok = true;
   } catch {
-    ok = legacyCopy(url);
+    ok = legacyCopy(text);
   }
-  if (ok) showToast({ message: "Link copied", icon: "check", duration: 2500 });
-  else showToast({ message: "Couldn't copy the link", duration: 3000 });
+  if (ok) showToast({ message: done, icon: "check", duration: 2500 });
+  else showToast({ message: failed, duration: 3000 });
   return ok ? "copied" : "failed";
+}
+
+export function copyLink(url) {
+  return copyText(url, { done: "Link copied", failed: "Couldn't copy the link" });
+}
+
+/** Share sheet with plain text (a shopping list); copies it where there is none. */
+export async function shareTextOrCopy({ title, text }) {
+  if (typeof navigator.share === "function") {
+    try {
+      await navigator.share({ title, text });
+      return "shared";
+    } catch (err) {
+      if (err?.name === "AbortError") return "cancelled";
+    }
+  }
+  return copyText(text, { done: "List copied", failed: "Couldn't copy the list" });
 }
 
 export const canShare = () =>

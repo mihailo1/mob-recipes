@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, ViewTransition } from "react";
 import { createPortal } from "react-dom";
 import RecipeImage from "./RecipeImage";
 
@@ -16,13 +16,27 @@ const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const placeholderUrl = (src) =>
   `/_next/image?url=${encodeURIComponent(src)}&w=1200&q=70`;
 
+// The photo morphs from the card the user tapped (lib/transitions.js).
+function Morph({ name, children }) {
+  if (!name) return children;
+  return (
+    <ViewTransition name={name} share="morph" default="none">
+      {children}
+    </ViewTransition>
+  );
+}
+
 // Trigger (the hero photo) + fullscreen viewer.
-export default function PhotoViewer({ src, alt, className = "recipe-hero" }) {
+export default function PhotoViewer({ src, alt, className = "recipe-hero", transitionName }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef(null);
 
   if (!src) {
-    return <RecipeImage className={className} src={src} alt={alt} priority />;
+    return (
+      <Morph name={transitionName}>
+        <RecipeImage className={className} src={src} alt={alt} priority />
+      </Morph>
+    );
   }
 
   return (
@@ -35,7 +49,9 @@ export default function PhotoViewer({ src, alt, className = "recipe-hero" }) {
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
       >
-        <RecipeImage className={className} src={src} alt="" priority />
+        <Morph name={transitionName}>
+          <RecipeImage className={className} src={src} alt="" priority />
+        </Morph>
         <span className="hero-zoom-hint" aria-hidden="true">
           <svg
             width="18"

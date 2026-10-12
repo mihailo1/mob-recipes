@@ -52,6 +52,27 @@ than any private endpoint — no login, no paywall bypass.
   (a code, its QR and a sendable link), so sharing everything means staying
   in sync. Logic: `lib/sync.mjs`, tests:
   `node scripts/test-sync.mjs`.
+- Browser features used for the feel of the app, each one optional (older
+  browsers simply skip it):
+  - View Transitions (React `<ViewTransition>`): a recipe photo morphs from
+    its card into the recipe page and back, tabs slide. Names and types live
+    in `lib/transitions.js`, animations at the end of `app/globals.css`.
+  - Scroll driven animations: reading progress line, hero photo drift, cards
+    rising into view, the cooking view progress bar.
+  - `@starting-style` entry animations, Popover API plus CSS anchor
+    positioning for ingredient amounts in method steps,
+    `content-visibility` for long recipe grids, `text-wrap` balance/pretty.
+  - Cooking view (`components/cook/CookMode.jsx`): one step per screen with
+    scroll snap, Screen Wake Lock, the step remembered per recipe.
+  - Haptics (`lib/haptics.js`): `navigator.vibrate` where it exists; on
+    iPhone (iOS 18+) toggling a hidden native switch plays the system tap.
+  - Dark theme from `prefers-color-scheme`: all colors are tokens on `:root`.
+  - Offline Saved: `components/OfflineKeeper.jsx` sends the service worker
+    the recipe pages, JSON and photos of everything in Saved and My kitchen
+    (`KEEP_OFFLINE` in `public/sw.js`), and asks for persistent storage.
+- Shopping list by supermarket aisle and "Send list" (system share sheet
+  with plain text). Aisle rules: `lib/aisles.mjs`, tests:
+  `node scripts/test-aisles.mjs`.
 
 ## Running it yourself
 

@@ -1,7 +1,10 @@
 "use client";
 
+import { ViewTransition } from "react";
 import Link from "next/link";
 import RecipeImage from "./RecipeImage";
+import { haptic } from "../lib/haptics";
+import { OPEN, isLastOpenedRecipe, recipePhotoName } from "../lib/transitions";
 import { useKitchen } from "../lib/store";
 import { useSaveToggle } from "./folders/useSaveToggle";
 import { FolderIcon } from "./folders/icons";
@@ -10,17 +13,25 @@ import { FolderIcon } from "./folders/icons";
  * Optional (Saved page only):
  *  onFolder   shows a folder button that calls it (opens "Save to folder")
  *  inFolder   folder button looks active (recipe is in at least one folder)
+ * morph=false: the photo does not morph into the recipe page, for a page that
+ * already shows this recipe's photo elsewhere (names must be unique).
  */
-export default function RecipeCard({ recipe, onFolder, inFolder = false }) {
+export default function RecipeCard({ recipe, onFolder, inFolder = false, morph = true }) {
   const { pool, favorites, togglePool } = useKitchen();
   const toggleSave = useSaveToggle();
   const inPool = pool.has(recipe.slug);
   const isFav = favorites.has(recipe.slug);
 
   return (
-    <div className="card">
-      <Link href={`/recipes/${recipe.slug}`} className="card-media">
-        <RecipeImage className="card-image" src={recipe.image} alt={recipe.name} />
+    <div className={`card ${isLastOpenedRecipe(recipe.slug) ? "is-last-opened" : ""}`}>
+      <Link href={`/recipes/${recipe.slug}`} transitionTypes={OPEN} className="card-media">
+        {morph ? (
+          <ViewTransition name={recipePhotoName(recipe.slug)} share="morph" default="none">
+            <RecipeImage className="card-image" src={recipe.image} alt={recipe.name} />
+          </ViewTransition>
+        ) : (
+          <RecipeImage className="card-image" src={recipe.image} alt={recipe.name} />
+        )}
       </Link>
       <div className="card-actions">
         <button
@@ -47,18 +58,21 @@ export default function RecipeCard({ recipe, onFolder, inFolder = false }) {
           type="button"
           aria-label={inPool ? "Remove from shopping list" : "Add to shopping list"}
           className={`icon-btn ${inPool ? "is-active" : ""}`}
-          onClick={() => togglePool(recipe.slug)}
+          onClick={() => {
+            haptic();
+            togglePool(recipe.slug);
+          }}
         >
           {inPool ? "✓" : "+"}
         </button>
       </div>
-      <Link href={`/recipes/${recipe.slug}`} className="card-body">
+      <Link href={`/recipes/${recipe.slug}`} transitionTypes={OPEN} className="card-body">
         <div className="card-title">{recipe.name}</div>
         <div className="chip-row">
           {recipe.totalTimeMinutes ? (
             <span className="chip time">{recipe.totalTimeMinutes} min</span>
           ) : null}
-          {(recipe.category || []).slice(0, 2).map((c) => (
+          {[...new Set(recipe.category || [])].slice(0, 2).map((c) => (
             <span className="chip" key={c}>
               {c}
             </span>

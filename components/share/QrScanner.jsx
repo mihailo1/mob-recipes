@@ -6,6 +6,7 @@ import BottomSheet from "../BottomSheet";
 import { showToast } from "../Toast";
 import { parseScan } from "../../lib/qr.mjs";
 import { joinWithCode } from "../../lib/sync-client";
+import { OPEN } from "../../lib/transitions";
 
 /*
  * Global QR scanner sheet. Any component calls openScanner();
@@ -76,7 +77,7 @@ function Scanner({ open }) {
       stop();
       if (target.type === "open") {
         closeScanner();
-        router.push(target.path);
+        router.push(target.path, { transitionTypes: OPEN });
         return true;
       }
       setWorking(true);

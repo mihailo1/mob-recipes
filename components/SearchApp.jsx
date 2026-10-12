@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, ViewTransition } from "react";
 import Link from "next/link";
 import RecipeImage from "./RecipeImage";
 import RecipeCard from "./RecipeCard";
@@ -15,6 +15,7 @@ import {
 import { useListRestoration } from "../lib/useListRestoration";
 import { DISCOVER_SORT_OPTIONS, QUICK_MINUTES } from "../lib/filters";
 import TimeRange from "./filters/TimeRange";
+import { OPEN, recipePhotoName } from "../lib/transitions";
 
 const PAGE_SIZE = 40;
 
@@ -104,13 +105,15 @@ export default function SearchApp() {
               Find a quick dinner <span>↗</span>
             </button>
           </div>
-          <Link className="hero-photo" href={`/recipes/${featured.slug}`}>
-            <RecipeImage
-              src={featured.image}
-              alt={featured.name}
-              priority
-              className="hero-image"
-            />
+          <Link className="hero-photo" href={`/recipes/${featured.slug}`} transitionTypes={OPEN}>
+            <ViewTransition name={recipePhotoName(featured.slug)} share="morph" default="none">
+              <RecipeImage
+                src={featured.image}
+                alt={featured.name}
+                priority
+                className="hero-image"
+              />
+            </ViewTransition>
             <div className="hero-caption">
               <span>
                 {featured.totalTimeMinutes} MIN · TONIGHT’S INSPIRATION
@@ -155,8 +158,9 @@ export default function SearchApp() {
         </div>
       ) : (
         <div className="grid">
+          {/* The hero above morphs the featured photo; one name per page. */}
           {shown.map((r) => (
-            <RecipeCard key={r.slug} recipe={r} />
+            <RecipeCard key={r.slug} recipe={r} morph={active || r.slug !== featured?.slug} />
           ))}
         </div>
       )}

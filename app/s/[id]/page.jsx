@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import SharedView from "../../../components/share/SharedView";
+import PageTransition from "../../../components/PageTransition";
 import { isValidShareId, shareSlugs, validateShare } from "../../../lib/share.mjs";
 import { getShare, storeMode } from "../../../lib/sync/store.js";
 
@@ -44,8 +45,10 @@ export default async function SharedPage({ params }) {
   const doc = await loadShare(id);
   if (doc === null) notFound();
   return (
-    <div className="container">
-      <SharedView id={id} doc={doc || null} />
-    </div>
+    <PageTransition>
+      <div className="container">
+        <SharedView id={id} doc={doc || null} />
+      </div>
+    </PageTransition>
   );
 }

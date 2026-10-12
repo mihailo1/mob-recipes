@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import PhotoViewer from "../../../components/PhotoViewer";
 import RecipeBody from "../../../components/RecipeBody";
 import TrackRecentRecipe from "../../../components/TrackRecentRecipe";
+import PageTransition from "../../../components/PageTransition";
+import { BACK, recipePhotoName } from "../../../lib/transitions";
 
 let _cache = null;
 function getRecipeMap() {
@@ -45,61 +47,68 @@ export default async function RecipePage({ params }) {
   if (!recipe) notFound();
 
   return (
-    <div className="container">
-      <TrackRecentRecipe
-        slug={recipe.slug}
-        name={recipe.name}
-        image={recipe.image || ""}
-      />
-      <Link href="/" scroll={false} className="back-link">
-        ← Back to search
-      </Link>
+    <PageTransition>
+      <div className="container recipe-page">
+        <span className="read-progress" aria-hidden="true" />
+        <TrackRecentRecipe
+          slug={recipe.slug}
+          name={recipe.name}
+          image={recipe.image || ""}
+        />
+        <Link href="/" scroll={false} transitionTypes={BACK} className="back-link">
+          ← Back to search
+        </Link>
 
-      <PhotoViewer src={recipe.image} alt={recipe.name} />
+        <PhotoViewer
+          src={recipe.image}
+          alt={recipe.name}
+          transitionName={recipePhotoName(recipe.slug)}
+        />
 
-      <h1 className="recipe-title">{recipe.name}</h1>
-      {recipe.description ? (
-        <p className="recipe-desc">{recipe.description}</p>
-      ) : null}
+        <h1 className="recipe-title">{recipe.name}</h1>
+        {recipe.description ? (
+          <p className="recipe-desc">{recipe.description}</p>
+        ) : null}
 
-      <div className="stat-row">
-        {recipe.prepTimeMinutes ? (
-          <div className="stat">
-            <strong>{recipe.prepTimeMinutes} min</strong>
-            prep
-          </div>
-        ) : null}
-        {recipe.cookTimeMinutes ? (
-          <div className="stat">
-            <strong>{recipe.cookTimeMinutes} min</strong>
-            cook
-          </div>
-        ) : null}
-        {recipe.totalTimeMinutes ? (
-          <div className="stat">
-            <strong>{recipe.totalTimeMinutes} min</strong>
-            total
-          </div>
-        ) : null}
+        <div className="stat-row">
+          {recipe.prepTimeMinutes ? (
+            <div className="stat">
+              <strong>{recipe.prepTimeMinutes} min</strong>
+              prep
+            </div>
+          ) : null}
+          {recipe.cookTimeMinutes ? (
+            <div className="stat">
+              <strong>{recipe.cookTimeMinutes} min</strong>
+              cook
+            </div>
+          ) : null}
+          {recipe.totalTimeMinutes ? (
+            <div className="stat">
+              <strong>{recipe.totalTimeMinutes} min</strong>
+              total
+            </div>
+          ) : null}
+        </div>
+
+        <div className="chip-row" style={{ margin: "6px 0 0" }}>
+          {[...new Set(recipe.category || [])].map((c) => (
+            <span className="chip" key={c}>
+              {c}
+            </span>
+          ))}
+          {recipe.cuisine ? <span className="chip">{recipe.cuisine}</span> : null}
+        </div>
+
+        <RecipeBody recipe={recipe} />
+
+        <p className="footer-note">
+          Source:{" "}
+          <a href={recipe.url} target="_blank" rel="noreferrer">
+            {recipe.url}
+          </a>
+        </p>
       </div>
-
-      <div className="chip-row" style={{ margin: "6px 0 0" }}>
-        {(recipe.category || []).map((c) => (
-          <span className="chip" key={c}>
-            {c}
-          </span>
-        ))}
-        {recipe.cuisine ? <span className="chip">{recipe.cuisine}</span> : null}
-      </div>
-
-      <RecipeBody recipe={recipe} />
-
-      <p className="footer-note">
-        Source:{" "}
-        <a href={recipe.url} target="_blank" rel="noreferrer">
-          {recipe.url}
-        </a>
-      </p>
-    </div>
+    </PageTransition>
   );
 }

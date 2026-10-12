@@ -11,6 +11,7 @@ import { openScanner } from "./QrScanner";
 import { showToast } from "../Toast";
 import { usePairCode } from "../sync/usePairCode";
 import PairCodeView from "../sync/PairCodeView";
+import { OPEN } from "../../lib/transitions";
 
 /*
  * "⋯" sheet next to Folders on Saved:
@@ -49,7 +50,7 @@ export default function SavedMenuSheet({ open, onClose }) {
       return;
     }
     onClose();
-    router.push(target.path);
+    router.push(target.path, { transitionTypes: OPEN });
   }
 
   async function paste() {

@@ -30,6 +30,8 @@ import { openAddToFolder } from "../../components/folders/AddToFolderSheet";
 import { showToast } from "../../components/Toast";
 import SavedMenuSheet from "../../components/share/SavedMenuSheet";
 import SyncCard from "../../components/SyncCard";
+import PageTransition from "../../components/PageTransition";
+import { OfflineNote } from "../../components/OfflineKeeper";
 import { buildShare } from "../../lib/share.mjs";
 import {
   NO_FOLDERS,
@@ -372,16 +374,19 @@ function SavedApp() {
 
 export default function FavoritesPage() {
   return (
-    <div className="container">
-      <header className="header">
-        <span className="eyebrow">YOUR PERSONAL COOKBOOK</span>
-        <h1>Saved for a good day.</h1>
-        <p>Recipes you&apos;ve saved for later.</p>
-      </header>
-      <Suspense fallback={<SearchAppSkeleton />}>
-        <SavedApp />
-      </Suspense>
-      <SyncCard />
-    </div>
+    <PageTransition>
+      <div className="container">
+        <header className="header">
+          <span className="eyebrow">YOUR PERSONAL COOKBOOK</span>
+          <h1>Saved for a good day.</h1>
+          <p>Recipes you&apos;ve saved for later.</p>
+        </header>
+        <Suspense fallback={<SearchAppSkeleton />}>
+          <SavedApp />
+        </Suspense>
+        <SyncCard />
+        <OfflineNote />
+      </div>
+    </PageTransition>
   );
 }

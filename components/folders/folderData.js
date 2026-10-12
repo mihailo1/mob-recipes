@@ -89,11 +89,5 @@ export function useFoldersFor(folders, favorites, slug) {
 export const recipesLabel = (n) =>
   `${n.toLocaleString()} ${n === 1 ? "recipe" : "recipes"}`;
 
-/** Light tap feedback where the platform supports it (not iOS Safari). */
-export function tick() {
-  try {
-    navigator.vibrate?.(8);
-  } catch {
-    // ignore
-  }
-}
+/** Light tap feedback (lib/haptics.js), also on iPhone. */
+export { haptic as tick } from "../../lib/haptics";
