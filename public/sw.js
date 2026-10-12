@@ -11,7 +11,13 @@
  * which posts {type: "SKIP_WAITING"}. User data lives in localStorage, which
  * the worker never touches.
  */
-const VERSION = "0.4.3";
+const VERSION = "0.4.4";
+// true: this release installs and takes over on its own, and open pages are
+// reloaded, with no "Update" banner. Must equal `silent` on the newest entry
+// in lib/changelog.js (next.config.mjs fails the build otherwise). Set it back
+// to false for any normal release.
+const SILENT_UPDATE = true;
+let replacingWorker = false;
 const PREFIX = "mob-";
 const CACHES = {
   pages: `${PREFIX}pages-${VERSION}`,
@@ -57,9 +63,10 @@ self.addEventListener("install", (event) => {
           }
         }),
       );
-      // First install only: no previous worker, so nothing to wait for.
-      // Updates stay in "waiting" until the user accepts them.
-      if (!self.registration.active) await self.skipWaiting();
+      // First install: no previous worker, so nothing to wait for. Updates
+      // stay in "waiting" until the user accepts them, unless SILENT_UPDATE.
+      replacingWorker = !!self.registration.active;
+      if (!self.registration.active || SILENT_UPDATE) await self.skipWaiting();
     })(),
   );
 });
@@ -89,6 +96,16 @@ self.addEventListener("activate", (event) => {
         await self.registration.navigationPreload.enable().catch(() => {});
       }
       await self.clients.claim();
+      if (SILENT_UPDATE && replacingWorker) {
+        // Pick up the new pages and scripts. Only visible windows: this runs
+        // when the app is opened, and saved data lives in localStorage.
+        const windows = await self.clients.matchAll({ type: "window" });
+        await Promise.all(
+          windows
+            .filter((c) => c.visibilityState === "visible")
+            .map((c) => c.navigate(c.url).catch(() => {})),
+        );
+      }
     })(),
   );
 });

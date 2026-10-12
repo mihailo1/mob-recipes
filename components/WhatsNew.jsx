@@ -61,6 +61,11 @@ export default function WhatsNew({ blocked }) {
       if (seen.value !== APP_VERSION) markSeen();
       return undefined;
     }
+    list = list.filter((e) => !e.silent);
+    if (!list.length) {
+      if (seen.value !== APP_VERSION) markSeen();
+      return undefined;
+    }
     list = [...list].sort((a, b) => compareVersions(a.version, b.version));
     const t = setTimeout(() => setEntries(list), DELAY_MS);
     return () => clearTimeout(t);

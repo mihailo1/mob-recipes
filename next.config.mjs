@@ -15,6 +15,19 @@ if (SW_VERSION !== APP_VERSION) {
   console.warn(`Warning: ${msg}`);
 }
 
+// A silent release (no update banner) must be marked in both places, so a
+// forgotten SILENT_UPDATE = true can never leak into the next normal release.
+const SW_SILENT =
+  readFileSync(new URL("./public/sw.js", import.meta.url), "utf8").match(
+    /const SILENT_UPDATE = (true|false);/,
+  )?.[1] === "true";
+const { CHANGELOG } = await import("./lib/changelog.js");
+if (SW_SILENT !== (CHANGELOG[0]?.silent === true)) {
+  const msg = "SILENT_UPDATE in public/sw.js must match `silent` on the newest lib/changelog.js entry";
+  if (process.env.NODE_ENV === "production") throw new Error(msg);
+  console.warn(`Warning: ${msg}`);
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {

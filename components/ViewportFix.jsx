@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 
 const EDITABLE = "input, textarea, select, [contenteditable]";
 const SETTLE_MS = 120;
-const MAX_LIFT = 240; // px; a bigger gap is not the stale-viewport case
+const MIN_LIFT = 40; // px; smaller gaps are rubber-band overscroll, not the stuck viewport
+const MAX_LIFT = 450; // px; a keyboard with the suggestion bar is ~340 on current iPhones
 const TAPS_TO_OPEN = 5;
 const TAP_WINDOW_MS = 2500;
 
@@ -20,16 +21,25 @@ function isStandalone() {
   );
 }
 
-// How far the visible area extends below the layout viewport, in px. Fixed
-// bars are anchored to the layout viewport, so this is how far they float
-// above the real bottom edge.
+function currentLift() {
+  return parseFloat(document.documentElement.style.getPropertyValue("--nb-lift")) || 0;
+}
+
+// How far the visible area extends below where the fixed bottom bar really
+// sits, in px. We measure the bar itself (minus the lift already applied)
+// instead of trusting clientHeight: on some iPhones the box that fixed
+// elements are anchored to is shorter than clientHeight after the keyboard.
 function measureGap() {
   const vv = window.visualViewport;
   if (!vv || vv.scale > 1.01) return 0;
-  const gap = Math.round(
-    vv.offsetTop + vv.height - document.documentElement.clientHeight,
-  );
-  return gap >= 2 && gap <= MAX_LIFT ? gap : 0;
+  const bar = document.querySelector(".nb-tabbar");
+  const box = bar ? bar.getBoundingClientRect() : null;
+  const base =
+    box && box.height > 0
+      ? box.bottom - currentLift()
+      : document.documentElement.clientHeight;
+  const gap = Math.round(vv.offsetTop + vv.height - base);
+  return gap >= MIN_LIFT && gap <= MAX_LIFT ? gap : 0;
 }
 
 function snapshot() {
@@ -91,6 +101,16 @@ export default function ViewportFix() {
       window.clearTimeout(timer);
       timer = window.setTimeout(apply, SETTLE_MS);
     };
+    // Scrolling is where the bar jumps, so react on the next frame instead of
+    // waiting for the settle delay. One cheap rect read per frame at most.
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        apply();
+      });
+    };
     const onVisible = () => {
       if (document.visibilityState === "visible") schedule();
     };
@@ -101,6 +121,7 @@ export default function ViewportFix() {
       [window, "resize", schedule],
       [window, "orientationchange", schedule],
       [window, "pageshow", schedule],
+      [window, "scroll", onScroll, { passive: true }],
     ];
     targets.forEach(([t, n, f, c]) => t.addEventListener(n, f, c));
     if (vv) {
@@ -128,6 +149,7 @@ export default function ViewportFix() {
 
     return () => {
       window.clearTimeout(timer);
+      window.cancelAnimationFrame(frame);
       targets.forEach(([t, n, f, c]) => t.removeEventListener(n, f, c));
       if (vv) {
         vv.removeEventListener("resize", schedule);
