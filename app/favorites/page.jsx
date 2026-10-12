@@ -218,8 +218,6 @@ function SavedApp() {
         key={`menu-${menu.key}`}
         open={menu.open}
         onClose={() => setMenu((m) => ({ ...m, open: false }))}
-        getShareDoc={() => shareDoc(null)}
-        savedCount={summaries.all.count}
       />
     </>
   );

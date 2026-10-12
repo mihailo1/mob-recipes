@@ -34,8 +34,7 @@ than any private endpoint — no login, no paywall bypass.
   uses IPv4 and the other IPv6. Logic: `lib/nearby.mjs`, tests:
   `node scripts/test-nearby.mjs`.
 - Sharing: a recipe page shares its own URL through the system share sheet
-  (or copies it). A folder, or everything saved, is stored as a read only
-  copy in Redis for a year (`POST /api/share`) and opens at `/s/<id>`, where
+  (or copies it). A folder is stored as a read only copy in Redis for a year (`POST /api/share`) and opens at `/s/<id>`, where
   the receiver can save it into their own Saved. Logic: `lib/share.mjs`,
   tests: `node scripts/test-share.mjs`. Every share also shows a QR code;
   the in-app scanner (scan icon in the top bar, jsQR loaded on demand) opens
@@ -49,7 +48,9 @@ than any private endpoint — no login, no paywall bypass.
   result (`/api/sync`). Every value carries the time it changed and the newer
   one wins, value by value; removals are kept as markers so they reach the
   other devices. Linking first keeps a raw copy of the data under
-  `<key>:backup-sync`. Logic: `lib/sync.mjs`, tests:
+  `<key>:backup-sync`. "Share everything" in Saved starts the same linking
+  (a code, its QR and a sendable link), so sharing everything means staying
+  in sync. Logic: `lib/sync.mjs`, tests:
   `node scripts/test-sync.mjs`.
 
 ## Running it yourself

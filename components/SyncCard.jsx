@@ -1,43 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import {
-  joinWithCode,
-  linkSpace,
-  pairApi,
-  readLink,
-  requestSync,
-  unlink,
-  useSyncState,
-} from "../lib/sync-client";
-import { pairUrl } from "../lib/qr.mjs";
-import QrCode from "./share/QrCode";
+import { joinWithCode, unlink, useSyncState } from "../lib/sync-client";
 import { openScanner } from "./share/QrScanner";
+import { usePairCode } from "./sync/usePairCode";
+import PairCodeView from "./sync/PairCodeView";
 
 /*
  * "Sync your devices" card (bottom of My kitchen and Saved).
  *
  * Linking: one device taps "Show a code" and gets 6 digits and a QR code for
- * 10 minutes; the other scans the QR in the app or types the digits. The showing device joins the space right
- * away (so its recipes are already there when the other one joins) and
- * leaves it again if the code is cancelled or expires unused.
+ * 10 minutes (components/sync/usePairCode.js); the other scans the QR in the
+ * app or types the digits. Saved, ⋯, "Share everything" starts the same.
  */
-
-const POLL_EVERY_S = 2;
-
-const ERRORS = {
-  429: "Too many codes. Wait a few minutes and try again.",
-  503: "Sync isn't available right now. Try again later.",
-};
-const OFFLINE = "Couldn't reach the server. Check your connection and try again.";
-
-const formatCode = (c) => `${c.slice(0, 3)} ${c.slice(3)}`;
-
-function left(ms) {
-  const s = Math.max(0, Math.ceil(ms / 1000));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-}
 
 function statusText(status) {
   if (status === "syncing") return "Syncing…";
@@ -50,83 +26,20 @@ function statusText(status) {
 export default function SyncCard() {
   const { linked, status } = useSyncState();
   const [view, setView] = useState("main"); // main | code | enter | done
-  const [pair, setPair] = useState(null); // { code, space, expires, wasLinked }
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [now, setNow] = useState(0);
   const inputRef = useRef(null);
+  const code = usePairCode();
 
-  // While a code is on screen: countdown, and notice when it gets used.
-  useEffect(() => {
-    if (view !== "code" || !pair) return undefined;
-    let ticks = 0;
-    let alive = true;
-    const finish = (state) => {
-      if (state === "used") {
-        setView("done");
-        requestSync();
-      } else {
-        if (!pair.wasLinked) unlink();
-        setView("main");
-        setMessage("The code expired. Show a new one to link a device.");
-      }
-    };
-    const id = window.setInterval(async () => {
-      const t = Date.now();
-      setNow(t);
-      if (t >= pair.expires) {
-        window.clearInterval(id);
-        finish("expired");
-        return;
-      }
-      ticks += 1;
-      if (ticks % POLL_EVERY_S || document.visibilityState !== "visible") return;
-      try {
-        const { data } = await pairApi.status(pair.code, pair.space);
-        if (!alive) return;
-        if (data.state === "used" || data.state === "expired") {
-          window.clearInterval(id);
-          finish(data.state);
-        }
-      } catch {
-        // keep showing the code; the next tick asks again
-      }
-    }, 1000);
-    return () => {
-      alive = false;
-      window.clearInterval(id);
-    };
-  }, [view, pair]);
-
-  async function showCode() {
-    setBusy(true);
+  function showCode() {
     setMessage("");
-    try {
-      const link = readLink();
-      const { status: st, data } = await pairApi.create(link?.space);
-      if (st !== 200 || !data.code) {
-        setMessage(ERRORS[st] || OFFLINE);
-        return;
-      }
-      if (!link) linkSpace(data.space);
-      const t = Date.now();
-      setNow(t);
-      setPair({ code: data.code, space: data.space, expires: t + data.ttl * 1000, wasLinked: !!link });
-      setView("code");
-    } catch {
-      setMessage(OFFLINE);
-    } finally {
-      setBusy(false);
-    }
+    setView("code");
+    code.start();
   }
 
   function cancelCode() {
-    if (pair) {
-      pairApi.cancel(pair.code, pair.space).catch(() => {});
-      if (!pair.wasLinked) unlink();
-    }
-    setPair(null);
+    code.cancel();
     setView("main");
   }
 
@@ -161,24 +74,32 @@ export default function SyncCard() {
     setMessage("Sync is off on this device. Your recipes stay here.");
   }
 
-  // Linked by scanning a QR while the code form was open.
-  const shown = view === "enter" && linked && !busy ? "done" : view;
+  // The code screen follows the code: used means linked, failed or expired
+  // goes back with a note. Linked by scanning a QR while the code form was
+  // open counts as done too.
+  let shown = view;
+  let note = message;
+  if (view === "code") {
+    if (code.phase === "used") shown = "done";
+    else if (code.phase === "expired") {
+      shown = "main";
+      note = "The code expired. Show a new one to link a device.";
+    } else if (code.phase === "idle" && code.error) {
+      shown = "main";
+      note = code.error;
+    }
+  }
+  if (view === "enter" && linked && !busy) shown = "done";
 
   let body;
-  if (shown === "code" && pair) {
+  if (shown === "code") {
     body = (
       <>
-        <div className="sc-qr">
-          <QrCode text={pairUrl(window.location.origin, pair.code)} size={176} label="QR code to link a device" />
-        </div>
-        <p className="pt-note">
-          On your other device, open Mob and tap the scan icon at the top. Or
-          type the code there under Sync your devices, Enter a code:
-        </p>
-        <p className="sc-code" aria-label={`Code ${pair.code.split("").join(" ")}`}>
-          {formatCode(pair.code)}
-        </p>
-        <p className="pt-note">Expires in {left(pair.expires - now)}.</p>
+        {code.pair && code.phase === "waiting" ? (
+          <PairCodeView pair={code.pair} now={code.now} />
+        ) : (
+          <p className="pt-note">Getting a code…</p>
+        )}
         <div className="sc-actions">
           <button type="button" className="pt-link" onClick={cancelCode}>
             Cancel
@@ -248,8 +169,8 @@ export default function SyncCard() {
         </div>
         <p className="pt-note">{statusText(status)}</p>
         <div className="sc-actions">
-          <button type="button" className="pt-btn sc-secondary" onClick={showCode} disabled={busy}>
-            {busy ? "Getting a code…" : "Link another device"}
+          <button type="button" className="pt-btn sc-secondary" onClick={showCode}>
+            Link another device
           </button>
         </div>
       </>
@@ -257,8 +178,8 @@ export default function SyncCard() {
   } else {
     body = (
       <div className="sc-actions">
-        <button type="button" className="pt-btn" onClick={showCode} disabled={busy}>
-          {busy ? "Getting a code…" : "Show a code"}
+        <button type="button" className="pt-btn" onClick={showCode}>
+          Show a code
         </button>
         <button type="button" className="pt-btn sc-secondary" onClick={openEnter} disabled={busy}>
           Enter a code
@@ -267,7 +188,7 @@ export default function SyncCard() {
     );
   }
 
-  const gone = !linked && status === "gone" && view === "main" && !message;
+  const gone = !linked && status === "gone" && shown === "main" && !note;
 
   return (
     <section className="pt-card sc-card" aria-labelledby="sc-title">
@@ -279,7 +200,7 @@ export default function SyncCard() {
       </p>
       {body}
       <p className="pt-note pt-live" role="status" aria-live="polite">
-        {gone ? "Sync stopped because the link expired. Link your devices again." : message}
+        {gone ? "Sync stopped because the link expired. Link your devices again." : note}
       </p>
     </section>
   );

@@ -3805,13 +3805,28 @@ html[data-resume] .toast-host {
   line-height: 1.45;
   text-align: center;
 }
-.sc-qr {
-  display: inline-flex;
+.pair-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin: 4px 0 8px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: #fff;
+}
+.pair-view .sc-code {
+  margin: 0;
+}
+.fd-menu-text {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+}
+.fd-menu-sub {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-muted);
+}
+.sh-linked {
+  font-weight: 800;
+  color: #3f8f6b;
 }
 .qr-scan {
   display: flex;

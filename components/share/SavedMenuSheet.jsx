@@ -4,34 +4,48 @@ import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import BottomSheet from "../BottomSheet";
-import ShareLinkPanel from "./ShareLinkPanel";
 import { LinkIcon, ScanIcon, ShareIcon } from "./icons";
 import { parseScan } from "../../lib/qr.mjs";
+import { joinWithCode } from "../../lib/sync-client";
 import { openScanner } from "./QrScanner";
-import { recipesLabel } from "../folders/folderData";
+import { showToast } from "../Toast";
+import { usePairCode } from "../sync/usePairCode";
+import PairCodeView from "../sync/PairCodeView";
 
 /*
  * "⋯" sheet next to Folders on Saved:
- *  - Share all saved: one link with every folder and the unfiled recipes
+ *  - Share everything: links the other phone for sync (a code and its QR),
+ *    so both keep the same Saved and kitchen from then on. A single folder
+ *    or recipe is shared as a copy instead (folder ⋯, recipe Share).
  *  - Scan a QR code: the scanner, also on the scan icon at the top
  *  - Open a shared link: paste a link someone sent. Needed on iPhone, where
  *    links open in Safari, not in the app on the Home Screen.
  * Render with a fresh `key` per opening so it starts on the menu.
  */
-export default function SavedMenuSheet({ open, onClose, getShareDoc, savedCount }) {
+export default function SavedMenuSheet({ open, onClose }) {
   const router = useRouter();
-  const [mode, setMode] = useState("menu"); // menu | share | open
-  const [shareDoc, setShareDoc] = useState(null);
+  const [mode, setMode] = useState("menu"); // menu | sync | open
+  const code = usePairCode();
   const [text, setText] = useState("");
   const [error, setError] = useState("");
   const inputRef = useRef(null);
   const canPaste =
     typeof navigator !== "undefined" && typeof navigator.clipboard?.readText === "function";
 
-  function openLink(value) {
+  async function openLink(value) {
     const target = parseScan(value);
-    if (target?.type !== "open") {
-      setError("That doesn't look like a link to a recipe or shared recipes.");
+    if (!target) {
+      setError("That doesn't look like a link from Mob Recipes.");
+      return;
+    }
+    if (target.type === "pair") {
+      const r = await joinWithCode(target.code);
+      if (!r.ok) {
+        setError(r.error);
+        return;
+      }
+      onClose();
+      showToast({ message: "Devices linked. Your kitchen and Saved now sync", icon: "check", duration: 4000 });
       return;
     }
     onClose();
@@ -43,8 +57,8 @@ export default function SavedMenuSheet({ open, onClose, getShareDoc, savedCount 
     try {
       const value = await navigator.clipboard.readText();
       setText(value);
-      if (parseScan(value)?.type === "open") openLink(value);
-      else setError("The copied text isn't a link to shared recipes.");
+      if (parseScan(value)) openLink(value);
+      else setError("The copied text isn't a link from Mob Recipes.");
     } catch {
       setError("Couldn't read the clipboard. Paste the link into the field instead.");
     }
@@ -52,18 +66,45 @@ export default function SavedMenuSheet({ open, onClose, getShareDoc, savedCount 
 
   let title = "Saved";
   let body;
-  if (mode === "share" && shareDoc) {
-    const folderCount = shareDoc.folders.length;
-    title = "Share all saved";
+  if (mode === "sync") {
+    title = "Share everything";
     body = (
-      <ShareLinkPanel
-        doc={shareDoc}
-        title="My saved recipes"
-        summary={`${recipesLabel(savedCount)}${
-          folderCount ? ` in ${folderCount === 1 ? "1 folder" : `${folderCount} folders`} and more` : ""
-        }. Whoever opens the link can save their own copy.`}
-        onDone={onClose}
-      />
+      <div className="sh-panel">
+        {code.phase === "used" ? (
+          <>
+            <p className="sh-summary sh-linked">Linked</p>
+            <p className="sh-summary">
+              Both phones now have the same Saved and My kitchen, and keep them
+              in sync. It can take a few seconds for changes to show up.
+            </p>
+            <button type="button" className="fd-btn fd-btn-primary" onClick={onClose}>
+              Done
+            </button>
+          </>
+        ) : code.phase === "waiting" && code.pair ? (
+          <>
+            <p className="sh-summary">
+              The other phone gets all your saved recipes, folders and My
+              kitchen, and from then on both stay in sync. Recipes saved on
+              that phone are added here too.
+            </p>
+            <PairCodeView pair={code.pair} now={code.now} sendable />
+          </>
+        ) : code.phase === "expired" || code.error ? (
+          <>
+            <p className="sh-error" role="alert">
+              {code.error || "The code expired."}
+            </p>
+            <button type="button" className="fd-btn fd-btn-ghost" onClick={code.start}>
+              Show a new code
+            </button>
+          </>
+        ) : (
+          <p className="sh-making" role="status">
+            Getting a code…
+          </p>
+        )}
+      </div>
     );
   } else if (mode === "open") {
     title = "Open a shared link";
@@ -77,7 +118,7 @@ export default function SavedMenuSheet({ open, onClose, getShareDoc, savedCount 
         }}
       >
         <p className="sh-summary">
-          Got a recipe or folder link from someone? Copy it, then paste it here.
+          Got a link from someone: a recipe, a folder or a sync link? Copy it, then paste it here.
         </p>
         <input
           ref={inputRef}
@@ -117,21 +158,22 @@ export default function SavedMenuSheet({ open, onClose, getShareDoc, savedCount 
   } else {
     body = (
       <ul className="fd-menu">
-        {savedCount > 0 ? (
-          <li>
-            <button
-              type="button"
-              className="fd-menu-item"
-              onClick={() => {
-                setShareDoc(getShareDoc());
-                setMode("share");
-              }}
-            >
-              <ShareIcon size={20} />
-              Share all saved
-            </button>
-          </li>
-        ) : null}
+        <li>
+          <button
+            type="button"
+            className="fd-menu-item"
+            onClick={() => {
+              setMode("sync");
+              code.start();
+            }}
+          >
+            <ShareIcon size={20} />
+            <span className="fd-menu-text">
+              Share everything
+              <span className="fd-menu-sub">Stays in sync with the other phone</span>
+            </span>
+          </button>
+        </li>
         <li>
           <button
             type="button"
