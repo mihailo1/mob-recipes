@@ -11,7 +11,7 @@
  * which posts {type: "SKIP_WAITING"}. User data lives in localStorage, which
  * the worker never touches.
  */
-const VERSION = "0.7.3";
+const VERSION = "0.7.4";
 // true: this release installs and takes over on its own, and open pages are
 // reloaded, with no "Update" banner. Must equal `silent` on the newest entry
 // in lib/changelog.js (next.config.mjs fails the build otherwise). Set it back

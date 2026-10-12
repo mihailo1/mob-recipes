@@ -3978,22 +3978,43 @@ html[data-resume] .toast-host {
   /* Above the bars: the chip sits over the tab bar. */
   z-index: 101;
 }
-::view-transition-old(.morph),
-::view-transition-new(.morph) {
-  /* The chip photo is square, the recipe photo is wide: keep it filled. */
-  height: 100%;
-  object-fit: cover;
+/* The photo grows from the square chip into the wide recipe photo. The frame
+   (image pair) clips it and rounds its corners from the chip's to the
+   recipe photo's; inside, each photo keeps its own shape, centred and
+   cropped like object-fit: cover, so nothing stretches and the last frame
+   is exactly the recipe photo. The small photo stays solid and the big one
+   fades in over it (no see-through cross-fade). */
+::view-transition-image-pair(.morph) {
+  overflow: clip;
+  border-radius: var(--radius);
+  animation: 420ms var(--vt-ease) both vt-round;
 }
-/* No see-through cross-fade: the small photo stays solid and the big one
-   fades in over it. */
 ::view-transition-old(.morph) {
+  /* Square: as wide as the frame, which is never taller than wide. */
   animation: none;
+  inset: 50% auto auto 0;
+  translate: 0 -50%;
 }
 ::view-transition-new(.morph) {
+  /* Wide: as tall as the frame, which is never wider than the photo. */
   animation: 260ms ease-out both vt-fade;
   mix-blend-mode: normal;
+  inline-size: auto;
+  block-size: 100%;
+  inset: 0 auto auto 50%;
+  translate: -50% 0;
+}
+/* The frame does the rounding, so both photos are captured square cornered. */
+:root:active-view-transition-type(nav-resume) .nb-resume-thumb,
+:root:active-view-transition-type(nav-resume) .recipe-hero {
+  border-radius: 0;
 }
 
+@keyframes vt-round {
+  from {
+    border-radius: 10px;
+  }
+}
 @keyframes vt-fade {
   from {
     opacity: 0;
