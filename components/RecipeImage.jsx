@@ -40,6 +40,24 @@ export function photoUrls(src, { width, dpr }) {
   };
 }
 
+// Photos already loaded in this tab, by recipe image: the URL that loaded
+// (largest width wins). A frame for the same photo at another size shows that
+// one at once instead of the blurred preview. This matters most for the
+// recipe page photo that morphs out of a card: the morph stays smooth because
+// nothing has to be blurred or decoded while it runs.
+const loadedPhotos = new Map(); // src -> { url, w }
+const MAX_LOADED = 300;
+
+function rememberLoaded(src, img) {
+  const w = img?.naturalWidth || 0;
+  if (!src || !w) return;
+  const prev = loadedPhotos.get(src);
+  if (prev && prev.w >= w) return;
+  loadedPhotos.delete(src);
+  loadedPhotos.set(src, { url: img.currentSrc || img.src, w });
+  if (loadedPhotos.size > MAX_LOADED) loadedPhotos.delete(loadedPhotos.keys().next().value);
+}
+
 function defaultSizes(className) {
   if (/\b(recipe-hero|hero-image)\b/.test(className)) return HERO_SIZES;
   if (/\bpool-thumb\b/.test(className)) return THUMB_SIZES;
@@ -49,6 +67,8 @@ function defaultSizes(className) {
 // stage: "opt" (optimizer srcSet) -> "orig" (original CDN url) -> "failed"
 function Frame({ src, alt, className, priority, sizes }) {
   const [stage, setStage] = useState(src ? "opt" : "failed");
+  // Read once: the frame keeps its placeholder for its whole life.
+  const [placeholder] = useState(() => loadedPhotos.get(src)?.url || null);
   const [loaded, setLoaded] = useState(false);
   const [instant, setInstant] = useState(false);
   const [previewState, setPreviewState] = useState("pending");
@@ -59,13 +79,14 @@ function Frame({ src, alt, className, priority, sizes }) {
     const img = imgRef.current;
     if (img && img.complete) {
       if (img.naturalWidth > 0) {
+        rememberLoaded(src, img);
         setInstant(true);
         setLoaded(true);
       } else {
         setStage((s) => (s === "opt" ? "orig" : "failed"));
       }
     }
-  }, []);
+  }, [src]); // the frame is keyed by src, so this runs once
 
   const onError = () => setStage((s) => (s === "opt" ? "orig" : "failed"));
 
@@ -73,6 +94,7 @@ function Frame({ src, alt, className, priority, sizes }) {
     "img-frame",
     loaded || stage === "failed" ? "is-loaded" : "",
     instant ? "img-instant" : "",
+    placeholder ? "has-placeholder" : "",
     className,
   ]
     .filter(Boolean)
@@ -90,13 +112,19 @@ function Frame({ src, alt, className, priority, sizes }) {
     loading: priority ? "eager" : "lazy",
     fetchPriority: priority ? "high" : "auto",
     decoding: "async",
-    onLoad: () => setLoaded(true),
+    onLoad: (e) => {
+      rememberLoaded(src, e.currentTarget);
+      setLoaded(true);
+    },
     onError,
   };
 
   return (
     <div className={classes}>
-      {stage === "opt" && previewState !== "error" ? (
+      {placeholder ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="img-placeholder" src={placeholder} alt="" aria-hidden="true" />
+      ) : stage === "opt" && previewState !== "error" ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           className={`img-preview ${previewState === "ready" ? "is-ready" : ""}`}

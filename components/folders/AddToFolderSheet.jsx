@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
+import Haptic from "../Haptic";
 import BottomSheet from "../BottomSheet";
 import { optimized } from "../RecipeImage";
 import { useKitchen } from "../../lib/store";
@@ -117,6 +118,7 @@ function FolderRow({ folder, summary, checked, onToggle }) {
       <span className="fd-check" aria-hidden="true">
         <CheckIcon size={14} />
       </span>
+      <Haptic />
     </button>
   );
 }

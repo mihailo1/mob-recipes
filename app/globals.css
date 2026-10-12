@@ -233,6 +233,19 @@ select {
   opacity: 1;
 }
 
+/* Once the photo is in, drop the layers under it: a blurred layer left under
+   every card costs a lot to draw, worst of all during page transitions. */
+.img-frame.is-loaded .img-preview,
+.img-frame.is-loaded .img-placeholder {
+  visibility: hidden;
+  transition: visibility 0s linear 0.3s;
+}
+/* The same photo loaded elsewhere at another size: shown sharp at once. */
+.img-frame.has-placeholder::before {
+  opacity: 0;
+  animation: none;
+}
+
 /* Main image fades in once loaded */
 .img-frame .img-main {
   opacity: 0;
@@ -4469,6 +4482,33 @@ button.ingredient-mark {
   margin: 12px 0 0;
   font-size: 13px;
   color: var(--ink-muted);
+}
+
+/* ---------------------------------------------------------------------------
+   Haptic tap layer (components/Haptic.jsx): a clear label over a button or
+   row; the finger lands on it and iPhone ticks. Zero specificity on the
+   parent rule, so any element that sets its own position keeps it.
+   ------------------------------------------------------------------------ */
+:where(:has(> .hx)) {
+  position: relative;
+}
+.hx {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  margin: 0;
+  border-radius: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hx-switch {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* ---------------------------------------------------------------------------

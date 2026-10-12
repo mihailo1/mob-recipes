@@ -13,6 +13,7 @@ import { NO_FOLDERS, useFoldersFor } from "./folders/folderData";
 import { FolderIcon } from "./folders/icons";
 import ShareRecipeButton from "./share/ShareRecipeButton";
 import { haptic } from "../lib/haptics";
+import Haptic from "./Haptic";
 import CookMode from "./cook/CookMode";
 import StepText, { stepIngredients } from "./cook/StepText";
 
@@ -61,6 +62,7 @@ export default function RecipeBody({ recipe }) {
           onClick={() => toggleSave(recipe)}
         >
           {isFav ? "♥ Saved" : "♡ Save"}
+          <Haptic />
         </button>
         <button
           type="button"
@@ -98,6 +100,7 @@ export default function RecipeBody({ recipe }) {
           }}
         >
           {inPool ? "✓ In your kitchen" : "+ Add to shopping list"}
+          <Haptic />
         </button>
         <ShareRecipeButton recipe={recipe} />
         <button
@@ -153,6 +156,7 @@ export default function RecipeBody({ recipe }) {
                   <input type="checkbox" onChange={haptic} />
                   <span>{formatIngredient(ing)}</span>
                 </label>
+                <Haptic clickInput />
               </li>
             ))}
           </ul>

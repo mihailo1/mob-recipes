@@ -13,6 +13,7 @@ import { shareTextOrCopy } from "../../components/share/shareActions";
 import { showToast } from "../../components/Toast";
 import { groupByAisle, shoppingListText } from "../../lib/aisles.mjs";
 import { haptic } from "../../lib/haptics";
+import Haptic from "../../components/Haptic";
 import { OPEN, recipePhotoName } from "../../lib/transitions";
 
 function loadChecked() {
@@ -145,6 +146,7 @@ export default function PoolPage() {
                         }}
                       >
                         ✕
+                        <Haptic />
                       </button>
                     </div>
                   ))}
@@ -200,6 +202,7 @@ export default function PoolPage() {
                                   {item.sources.length} recipes
                                 </span>
                               ) : null}
+                              <Haptic clickInput />
                             </li>
                           );
                         })}

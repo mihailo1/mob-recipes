@@ -4,6 +4,7 @@ import { ViewTransition } from "react";
 import Link from "next/link";
 import RecipeImage from "./RecipeImage";
 import { haptic } from "../lib/haptics";
+import Haptic from "./Haptic";
 import { OPEN, isLastOpenedRecipe, recipePhotoName } from "../lib/transitions";
 import { useKitchen } from "../lib/store";
 import { useSaveToggle } from "./folders/useSaveToggle";
@@ -42,6 +43,7 @@ export default function RecipeCard({ recipe, onFolder, inFolder = false, morph =
           onClick={() => toggleSave(recipe)}
         >
           {isFav ? "♥" : "♡"}
+          <Haptic />
         </button>
         {onFolder ? (
           <button
@@ -52,6 +54,7 @@ export default function RecipeCard({ recipe, onFolder, inFolder = false, morph =
             onClick={onFolder}
           >
             <FolderIcon size={17} filled={inFolder} />
+            <Haptic />
           </button>
         ) : null}
         <button
@@ -64,6 +67,7 @@ export default function RecipeCard({ recipe, onFolder, inFolder = false, morph =
           }}
         >
           {inPool ? "✓" : "+"}
+          <Haptic />
         </button>
       </div>
       <Link href={`/recipes/${recipe.slug}`} transitionTypes={OPEN} className="card-body">

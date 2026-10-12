@@ -7,6 +7,7 @@ import { haptic } from "../../lib/haptics";
 import { useWakeLock } from "../../lib/useWakeLock";
 import { lockScroll, unlockScroll } from "../BottomSheet";
 import StepText, { stepIngredients } from "./StepText";
+import Haptic from "../Haptic";
 
 /*
  * Full screen cooking view: one step per screen, swiped sideways (CSS scroll
@@ -176,6 +177,7 @@ export default function CookMode({ recipe, ingredients, steps, servings, onClose
                     <input type="checkbox" checked={have.has(i)} onChange={() => toggleHave(i)} />
                     <span>{formatIngredient(ing)}</span>
                   </label>
+                  <Haptic clickInput />
                 </li>
               ))}
             </ul>
@@ -224,6 +226,7 @@ export default function CookMode({ recipe, ingredients, steps, servings, onClose
       <nav className="ck-nav" aria-label="Steps">
         <button type="button" className="pill-btn" onClick={() => go(index - 1)} disabled={index === 0}>
           ← Back
+          <Haptic />
         </button>
         <button
           type="button"
@@ -231,6 +234,7 @@ export default function CookMode({ recipe, ingredients, steps, servings, onClose
           onClick={() => (index === total - 1 ? close() : go(index + 1))}
         >
           {index === 0 ? "Start" : index === total - 1 ? "Close" : index === total - 2 ? "Finish" : "Next →"}
+          <Haptic />
         </button>
       </nav>
     </div>,
