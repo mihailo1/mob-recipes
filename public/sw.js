@@ -19,9 +19,13 @@ const VERSION = "0.4.4";
 const SILENT_UPDATE = true;
 let replacingWorker = false;
 const PREFIX = "mob-";
+// Bump REV to ship a fix under the same VERSION: any change to this file makes
+// phones install the worker (silently while SILENT_UPDATE is true), and a new
+// REV drops the cached HTML and JSON from the previous build.
+const REV = 2;
 const CACHES = {
-  pages: `${PREFIX}pages-${VERSION}`,
-  data: `${PREFIX}data-${VERSION}`,
+  pages: `${PREFIX}pages-${VERSION}-r${REV}`,
+  data: `${PREFIX}data-${VERSION}-r${REV}`,
   static: `${PREFIX}static-v1`,
   thumbs: `${PREFIX}thumbs-v1`,
   photos: `${PREFIX}photos-v1`,
@@ -282,21 +286,30 @@ function parsePush(event) {
   if (!data || typeof data !== "object") data = {};
   const str = (v, fallback) =>
     typeof v === "string" && v.trim() ? v.trim().slice(0, 300) : fallback;
+  // Only a same-site path under /push/ is used as the icon. Anything else gets the default.
+  const icon =
+    typeof data.icon === "string" &&
+    data.icon.startsWith("/push/") &&
+    data.icon.length <= 100 &&
+    !data.icon.includes("..")
+      ? data.icon
+      : "/icons/icon-192.png";
   return {
     title: str(data.title, PUSH_DEFAULTS.title),
     body: str(data.body, PUSH_DEFAULTS.body),
     tag: str(data.tag, PUSH_DEFAULTS.tag),
     url: str(data.url, PUSH_DEFAULTS.url),
+    icon,
   };
 }
 
 self.addEventListener("push", (event) => {
-  const { title, body, tag, url } = parsePush(event);
+  const { title, body, tag, url, icon } = parsePush(event);
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
       tag,
-      icon: "/icons/icon-192.png",
+      icon,
       badge: "/icons/icon-192.png",
       data: { url },
     }),

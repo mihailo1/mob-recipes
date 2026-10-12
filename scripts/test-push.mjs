@@ -533,6 +533,15 @@ await test("custom messages: validated, no limits, never use the update slot", a
   const ok = validateNotifyBody({ custom: { body: " New recipes ", title: "Hi", url: "/pool" } });
   assert.deepEqual(ok.custom, { title: "Hi", body: "New recipes", url: "/pool", tag: "mob-custom" });
   assert.equal(validateNotifyBody({ custom: { body: "x" } }).custom.title, "Mob Recipes");
+  assert.equal("icon" in ok.custom, false, "no icon key unless one is given");
+
+  const withIcon = validateNotifyBody({ custom: { body: "x", icon: "/push/kitten-192.png" } });
+  assert.equal(withIcon.custom.icon, "/push/kitten-192.png");
+  assert.equal(withIcon.custom.tag, "mob-custom");
+  for (const icon of ["/push/a.jpg", "/push/a.jpeg", "/push/a.webp"]) {
+    assert.equal(validateNotifyBody({ custom: { body: "x", icon } }).ok, true, icon);
+  }
+
   for (const bad of [
     { body: "" },
     { body: "x".repeat(201) },
@@ -540,6 +549,12 @@ await test("custom messages: validated, no limits, never use the update slot", a
     { body: "x", url: "https://evil.com" },
     { body: "x", url: "//evil.com" },
     { body: "x", url: "javascript:alert(1)" },
+    { body: "x", icon: "https://evil.com/x.png" },
+    { body: "x", icon: "/push/../x.png" },
+    { body: "x", icon: "/icons/icon-192.png" },
+    { body: "x", icon: "/push/a.svg" },
+    { body: "x", icon: 42 },
+    { body: "x", icon: ["/push/a.png"] },
     { title: "no body" },
   ]) {
     assert.equal(validateNotifyBody({ custom: bad }).ok, false, JSON.stringify(bad));

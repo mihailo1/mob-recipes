@@ -88,6 +88,11 @@ phones. It ignores the version checks and the 24h limit and does not use up the
 update-alert slot. Title, `url` (a path such as `/pool`) and the tap target are
 optional; the text is at most 200 characters.
 
+The optional `icon` input is a path to an image under `public/push/`, such as
+`/push/kitten-192.png`. Android and desktop show it. iOS usually shows the app
+icon instead. Any other path (outside `public/push/`, `..`, SVG) is rejected and
+the message is not sent.
+
 ```sh
 gh workflow run notify-update.yml --repo mihailo1/mob-recipes -f message="New recipes are in" -f title="Mob Recipes" -f url="/"
 ```

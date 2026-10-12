@@ -36,6 +36,11 @@ on:
         type: string
         required: false
         default: ""
+      icon:
+        description: "Custom text: image to show (optional, a path like /push/kitten-192.png, files under public/push/ only)"
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: write # only to push the v<version> tag
@@ -118,9 +123,10 @@ jobs:
         env:
           TITLE: ${{ github.event.inputs.title }}
           URL_PATH: ${{ github.event.inputs.url }}
+          ICON_PATH: ${{ github.event.inputs.icon }}
         run: |
-          BODY=$(jq -cn --arg b "$MESSAGE" --arg t "$TITLE" --arg u "$URL_PATH" \
-            '{custom: ({body: $b} + (if $t != "" then {title: $t} else {} end) + (if $u != "" then {url: $u} else {} end))}')
+          BODY=$(jq -cn --arg b "$MESSAGE" --arg t "$TITLE" --arg u "$URL_PATH" --arg i "$ICON_PATH" \
+            '{custom: ({body: $b} + (if $t != "" then {title: $t} else {} end) + (if $u != "" then {url: $u} else {} end) + (if $i != "" then {icon: $i} else {} end))}')
           OUT=$(mktemp)
           CODE=$(curl -sS -m 30 -o "$OUT" -w '%{http_code}' -X POST "$SITE/api/push/notify" \
             -H "Authorization: Bearer $NOTIFY_SECRET" \
