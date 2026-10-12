@@ -3462,6 +3462,40 @@ html[data-resume] .toast-host {
   font-size: 14px;
   line-height: 1.5;
 }
+.pt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.pt-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.pt-input {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 320px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+}
+/* 16px keeps iOS Safari from zooming in on focus. The selector has to outrank
+   the global mobile form control rule (15px) that comes earlier. */
+.pt-card .pt-field input.pt-input {
+  font-size: 16px;
+}
+.pt-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.pt-input[aria-invalid="true"] {
+  border-color: var(--accent);
+}
 .pt-btn {
   display: inline-flex;
   align-items: center;
@@ -3517,4 +3551,9 @@ html[data-resume] .toast-host {
 }
 .pt-live {
   min-height: 19px;
+}
+/* Nothing to announce: take no space, so the card's bottom padding matches the top. */
+.pt-live:empty {
+  margin: 0;
+  min-height: 0;
 }

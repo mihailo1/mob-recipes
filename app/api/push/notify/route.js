@@ -1,22 +1,22 @@
-import { createHash, timingSafeEqual } from "node:crypto";
 import { PUSH_LIMITS } from "../../../../lib/push/config.js";
 import { json, readJsonBody } from "../../../../lib/push/http.js";
 import { createSender } from "../../../../lib/push/send.js";
-import { executeNotify, validateNotifyBody } from "../../../../lib/push/state.mjs";
-import { isConfigured, readState, writeState } from "../../../../lib/push/store.js";
+import {
+  applyNotifyEffects,
+  executeNotify,
+  safeEqual,
+  validateNotifyBody,
+} from "../../../../lib/push/state.mjs";
+import { isConfigured, mutateState, readSnapshot } from "../../../../lib/push/store.js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-const sha256 = (s) => createHash("sha256").update(s).digest();
-
 function authorized(req, secret) {
   const header = req.headers.get("authorization") || "";
   const match = /^Bearer (.+)$/.exec(header);
-  if (!match) return false;
-  // Equal-length digests make the comparison constant-time regardless of input length.
-  return timingSafeEqual(sha256(match[1]), sha256(secret));
+  return !!match && safeEqual(match[1], secret);
 }
 
 export async function POST(req) {
@@ -32,18 +32,24 @@ export async function POST(req) {
   if (!send) return json({ error: "not-configured" }, 503);
 
   try {
-    const state = await readState();
-    const r = await executeNotify(state, {
+    const now = Date.now();
+    const snap = await readSnapshot();
+    const r = await executeNotify(snap.state, {
       version: parsed.version,
       force: parsed.force,
-      now: Date.now(),
+      now,
       limits: PUSH_LIMITS,
       send,
     });
-    if (r.nextState) await writeState(r.nextState);
+    // One write at most. On a conflict the same outcome is applied to a fresh
+    // read; nothing is sent twice.
+    if (r.nextState) {
+      await mutateState((state) => ({ next: applyNotifyEffects(state, r.effects, now).nextState }), snap);
+    }
     // Counts only: subscription endpoints and keys are credentials.
     console.log(`push notify ${r.status} ${r.reason ?? ""} delivered=${r.delivered ?? 0} pruned=${r.pruned ?? 0}`);
     if (r.status === "skipped") return json({ status: "skipped", reason: r.reason });
+    if (r.status === "failed") return json({ status: "failed", delivered: 0, pruned: r.pruned }, 502);
     return json({ status: "sent", delivered: r.delivered, pruned: r.pruned });
   } catch {
     return json({ error: "unavailable" }, 503);

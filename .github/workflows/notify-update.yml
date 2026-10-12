@@ -5,6 +5,10 @@ name: Notify update
 # The server enforces the real limits (max one push per 24h, device cap), so
 # this workflow only decides WHEN to call it.
 #
+# The job fails (and the version tag is NOT created) whenever notify answers
+# anything but HTTP 200. A 502 means devices exist but none received the
+# push; re-run it with the manual workflow below.
+#
 # A manual run (workflow_dispatch) with `force` set bypasses the server's
 # 24h limit and the "already sent" check, and ignores an existing version
 # tag. Use it only to test.
@@ -50,7 +54,7 @@ jobs:
 
       - name: Checkout deployed commit
         if: steps.gate.outputs.go == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.deployment.sha || github.sha }}
           fetch-depth: 1
@@ -97,17 +101,21 @@ jobs:
           VERSION: ${{ steps.ver.outputs.version }}
         run: |
           BODY=$(printf '{"version":"%s","force":%s}' "$VERSION" "$FORCE")
-          if ! RESPONSE=$(curl --fail-with-body -sS -m 30 -X POST "$SITE/api/push/notify" \
+          OUT=$(mktemp)
+          CODE=$(curl -sS -m 30 -o "$OUT" -w '%{http_code}' -X POST "$SITE/api/push/notify" \
             -H "Authorization: Bearer $NOTIFY_SECRET" \
             -H "content-type: application/json" \
-            -d "$BODY"); then
-            echo "Notify failed: $RESPONSE"
+            -d "$BODY") || CODE="curl-error"
+          RESPONSE=$(head -c 500 "$OUT")
+          if [ "$CODE" != "200" ]; then
+            echo "Notify failed (HTTP $CODE): $RESPONSE"
             exit 1
           fi
           echo "Notify response: $RESPONSE"
 
       - name: Tag the version as handled
-        if: steps.gate.outputs.go == 'true' && steps.ver.outputs.go == 'true' && steps.ver.outputs.tag_exists != 'true'
+        # success() is explicit: a failed notify must never create the tag.
+        if: success() && steps.gate.outputs.go == 'true' && steps.ver.outputs.go == 'true' && steps.ver.outputs.tag_exists != 'true'
         env:
           VERSION: ${{ steps.ver.outputs.version }}
         run: |

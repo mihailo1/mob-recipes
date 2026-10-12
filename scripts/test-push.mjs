@@ -2,11 +2,16 @@
 // Exercises lib/push/state.mjs (pure Web Push logic). No network, no Blob.
 // Usage: node scripts/test-push.mjs   (exit code 1 on failure)
 import assert from "node:assert/strict";
-import { randomBytes } from "node:crypto";
+import { createECDH, randomBytes } from "node:crypto";
 import {
+  MAX_FAILS,
+  accessCodeOk,
+  applyNotifyEffects,
   applySubscribe,
   applyUnsubscribe,
   buildPayload,
+  classifySend,
+  compareVersions,
   decideNotify,
   emptyState,
   executeNotify,
@@ -14,7 +19,10 @@ import {
   isValidAuth,
   isValidP256dh,
   parseState,
+  pushStatus,
+  safeEqual,
   shortVersion,
+  storageModeFromEnv,
   validateNotifyBody,
   validateSubscribeBody,
   validateUnsubscribeBody,
@@ -24,7 +32,13 @@ const LIMITS = { maxDevices: 5, gapMs: 24 * 60 * 60 * 1000, maxWrites: 20 };
 const NOW = Date.UTC(2026, 9, 12, 12, 0, 0);
 const DAY = LIMITS.gapMs;
 
-const p256dh = () => Buffer.concat([Buffer.from([0x04]), randomBytes(64)]).toString("base64url");
+// A real P-256 public key (uncompressed point), as browsers send it.
+const p256dh = () => {
+  const ecdh = createECDH("prime256v1");
+  ecdh.generateKeys();
+  return ecdh.getPublicKey().toString("base64url");
+};
+const randomPoint = () => Buffer.concat([Buffer.from([0x04]), randomBytes(64)]).toString("base64url");
 const auth = () => randomBytes(16).toString("base64url");
 const keys = () => ({ p256dh: p256dh(), auth: auth() });
 const ep = (n) => `https://fcm.googleapis.com/fcm/send/device-${n}`;
@@ -294,12 +308,14 @@ await test("notify prunes 404 and 410 devices, keeps others", async () => {
 await test("lastPush recorded only on success; prune still written", async () => {
   const s = withDevices(2, { lastPush: { at: NOW - 5 * DAY, version: "0.4.0" } });
   const allFail = await run(s, async () => ({ ok: false, statusCode: 500 }));
-  assert.equal(allFail.status, "sent");
+  assert.equal(allFail.status, "failed");
   assert.equal(allFail.delivered, 0);
-  assert.equal(allFail.nextState, null, "nothing changed, no write");
+  assert.equal(allFail.nextState, null, "transient errors change nothing, no write");
 
   const timeout = await run(s, async () => ({ ok: false }));
-  assert.equal(timeout.nextState, null);
+  assert.equal(timeout.status, "failed");
+  assert.deepEqual(timeout.nextState.subs.map((x) => x.fails), [1, 1], "no status counts as a hard failure");
+  assert.deepEqual(timeout.nextState.lastPush, s.lastPush);
 
   const allGone = await run(s, async () => ({ ok: false, statusCode: 410 }));
   assert.equal(allGone.delivered, 0);
@@ -349,6 +365,156 @@ await test("parseState accepts good docs and rejects malformed ones", () => {
     { v: 1, subs: [], lastPush: null },
     { v: 1, subs: [], lastPush: null, writes: { day: 5, n: 0 } }]) {
     assert.equal(parseState(bad), null, JSON.stringify(bad));
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Hardening: access code, EC points, failure tracking, older-version, 502, status
+// ---------------------------------------------------------------------------
+
+await test("access code gate: open when unset, constant time match when set", () => {
+  assert.equal(accessCodeOk(null, undefined), true, "no code configured: open");
+  assert.equal(accessCodeOk(null, ""), true, "empty code configured: open");
+  assert.equal(accessCodeOk("anything", undefined), true);
+  assert.equal(accessCodeOk("test-code", "test-code"), true);
+  assert.equal(accessCodeOk(null, "test-code"), false, "missing header");
+  assert.equal(accessCodeOk("", "test-code"), false, "empty header");
+  assert.equal(accessCodeOk("test-cod", "test-code"), false, "prefix");
+  assert.equal(accessCodeOk("test-code ", "test-code"), false, "trailing space");
+  assert.equal(accessCodeOk("TEST-CODE", "test-code"), false, "case");
+  assert.equal(accessCodeOk("x".repeat(5000), "test-code"), false, "long input");
+  assert.equal(safeEqual("a", "a"), true);
+  assert.equal(safeEqual(undefined, "a"), false);
+  assert.equal(safeEqual("a", undefined), false);
+});
+
+await test("p256dh must be a real P-256 point", () => {
+  for (let i = 0; i < 5; i++) assert.equal(isValidP256dh(p256dh()), true, "generated key accepted");
+  // A random 64 byte tail is almost never on the curve; try several.
+  for (let i = 0; i < 20; i++) assert.equal(isValidP256dh(randomPoint()), false, "random 0x04 bytes rejected");
+  assert.equal(validateSubscribeBody({ subscription: { endpoint: ep(1), keys: { p256dh: randomPoint(), auth: auth() } } }).ok, false);
+  assert.equal(validateSubscribeBody({ subscription: { endpoint: ep(1), keys: { p256dh: p256dh(), auth: auth() } } }).ok, true);
+});
+
+await test("send classification", () => {
+  assert.equal(classifySend({ ok: true }), "ok");
+  assert.equal(classifySend({ ok: false, statusCode: 404 }), "gone");
+  assert.equal(classifySend({ ok: false, statusCode: 410 }), "gone");
+  for (const c of [429, 500, 502, 503]) assert.equal(classifySend({ ok: false, statusCode: c }), "transient", String(c));
+  for (const c of [undefined, 400, 401, 403, 413]) assert.equal(classifySend({ ok: false, statusCode: c }), "hard", String(c));
+  assert.equal(classifySend(undefined), "hard");
+});
+
+await test("failure tracking: hard +1 and prune at 3, success resets, transient unchanged", async () => {
+  assert.equal(MAX_FAILS, 3);
+  let s = withDevices(3, { lastPush: { at: NOW - 5 * DAY, version: "0.4.0" } });
+  const [a, b, c] = s.subs.map((x) => x.endpoint);
+  assert.deepEqual(s.subs.map((x) => x.fails), [0, 0, 0], "new devices start at 0");
+  const plan = { [a]: { ok: false, statusCode: 403 }, [b]: { ok: false, statusCode: 503 }, [c]: { ok: true } };
+  const send = async (d) => plan[d.endpoint];
+
+  let r = await run(s, send, { force: true });
+  assert.equal(r.status, "sent");
+  assert.deepEqual(r.nextState.subs.map((x) => [x.endpoint, x.fails]), [[a, 1], [b, 0], [c, 0]]);
+  r = await run(r.nextState, send, { force: true });
+  assert.deepEqual(r.nextState.subs.map((x) => x.fails), [2, 0, 0]);
+  assert.equal(r.pruned, 0);
+  r = await run(r.nextState, send, { force: true });
+  assert.equal(r.pruned, 1, "third hard failure prunes");
+  assert.deepEqual(r.nextState.subs.map((x) => x.endpoint), [b, c]);
+
+  // A success resets the counter.
+  s = { ...withDevices(1), subs: [{ ...withDevices(1).subs[0], fails: 2 }] };
+  r = await run(s, okSend);
+  assert.equal(r.nextState.subs[0].fails, 0);
+
+  // Transient only and nothing delivered: no change at all, so no write.
+  s = withDevices(2, { subs: withDevices(2).subs.map((x) => ({ ...x, fails: 1 })) });
+  r = await run(s, async () => ({ ok: false, statusCode: 500 }));
+  assert.equal(r.nextState, null);
+
+  // A send that throws counts as a hard failure, never crashes the round.
+  r = await run(withDevices(1), async () => {
+    throw new Error("boom");
+  });
+  assert.equal(r.status, "failed");
+  assert.equal(r.nextState.subs[0].fails, 1);
+});
+
+await test("notify effects re-apply to a fresher state without resending", async () => {
+  const s = withDevices(2);
+  const [a, b] = s.subs.map((x) => x.endpoint);
+  const r = await run(s, async (d) => (d.endpoint === a ? { ok: false, statusCode: 410 } : { ok: false, statusCode: 401 }));
+  assert.equal(r.status, "failed");
+  // Meanwhile another device subscribed. The same outcome applies on top.
+  const fresh = applySubscribe(s, sub(77), NOW, LIMITS).state;
+  const again = applyNotifyEffects(fresh, r.effects, NOW).nextState;
+  assert.deepEqual(again.subs.map((x) => [x.endpoint, x.fails]), [[b, 1], [ep(77), 0]]);
+  assert.equal(again.lastPush, null, "nothing delivered: no lastPush");
+});
+
+await test("502 decision: devices exist and nothing delivered", async () => {
+  const s = withDevices(2);
+  const gone = await run(s, async () => ({ ok: false, statusCode: 404 }));
+  assert.equal(gone.status, "failed");
+  assert.equal(gone.delivered, 0);
+  assert.equal(gone.pruned, 2);
+  assert.equal(gone.nextState.subs.length, 0, "prunes still persisted");
+  assert.equal(gone.nextState.lastPush, null, "lastPush not recorded");
+  const one = await run(s, async (d) => (d.endpoint === s.subs[0].endpoint ? { ok: true } : { ok: false, statusCode: 500 }));
+  assert.equal(one.status, "sent");
+  assert.equal(one.delivered, 1);
+  const none = await run(emptyState(), okSend);
+  assert.equal(none.status, "skipped", "no devices is a skip, not a failure");
+});
+
+await test("older-version skip and reason order", () => {
+  assert.equal(compareVersions("0.4.2", "0.4.10"), -1);
+  assert.equal(compareVersions("0.10.0", "0.9.9"), 1);
+  assert.equal(compareVersions("1.0.0", "1.0.0"), 0);
+  assert.equal(compareVersions("x", "1.0.0"), 0);
+  const s = withDevices(1);
+  const at = (ago, version) => ({ ...s, lastPush: { at: NOW - ago, version } });
+  assert.deepEqual(decideNotify(at(3 * DAY, "0.4.3"), "0.4.2", false, NOW, LIMITS), { send: false, reason: "older-version" });
+  assert.deepEqual(decideNotify(at(1000, "0.4.3"), "0.4.2", false, NOW, LIMITS), { send: false, reason: "older-version" }, "older-version before daily-limit");
+  assert.deepEqual(decideNotify(at(1000, "0.4.2"), "0.4.2", false, NOW, LIMITS), { send: false, reason: "already-sent" }, "already-sent first");
+  assert.deepEqual(decideNotify(at(3 * DAY, "0.4.3"), "0.4.2", true, NOW, LIMITS), { send: true }, "force bypasses");
+  assert.deepEqual(decideNotify(at(3 * DAY, "0.4.1"), "0.4.2", false, NOW, LIMITS), { send: true });
+  assert.deepEqual(decideNotify({ ...emptyState(), lastPush: { at: NOW, version: "0.4.3" } }, "0.4.2", false, NOW, LIMITS).reason, "older-version");
+  assert.deepEqual(decideNotify({ ...emptyState(), lastPush: { at: NOW, version: "0.4.3" } }, "0.4.2", true, NOW, LIMITS).reason, "no-devices");
+});
+
+await test("status is a pure function of env, never touches storage", () => {
+  const full = { BLOB_READ_WRITE_TOKEN: "t", VAPID_PRIVATE_KEY: "k", NOTIFY_SECRET: "s", NODE_ENV: "production" };
+  assert.deepEqual(pushStatus(full), { configured: true, codeRequired: false });
+  assert.deepEqual(pushStatus({ ...full, SUBSCRIBE_CODE: "c" }), { configured: true, codeRequired: true });
+  assert.deepEqual(pushStatus({ ...full, NOTIFY_SECRET: "" }), { configured: false, codeRequired: false });
+  assert.deepEqual(pushStatus({ ...full, VAPID_PRIVATE_KEY: undefined }), { configured: false, codeRequired: false });
+  const noBlob = { VAPID_PRIVATE_KEY: "k", NOTIFY_SECRET: "s", NODE_ENV: "production" };
+  assert.equal(pushStatus(noBlob).configured, false);
+  assert.equal(pushStatus({ ...noBlob, PUSH_ALLOW_FILE_STORE: "1" }).configured, true);
+  assert.equal(pushStatus({ ...noBlob, PUSH_ALLOW_FILE_STORE: "1", VERCEL: "1" }).configured, false, "file store never on Vercel");
+  assert.deepEqual(Object.keys(pushStatus(full)).sort(), ["codeRequired", "configured"], "no `full` field");
+  assert.equal(storageModeFromEnv({ NODE_ENV: "development" }), "file");
+  assert.equal(storageModeFromEnv({ NODE_ENV: "production" }), null);
+  assert.equal(storageModeFromEnv({ NODE_ENV: "production", PUSH_ALLOW_FILE_STORE: "1", VERCEL: "1" }), null);
+  assert.equal(storageModeFromEnv({ BLOB_READ_WRITE_TOKEN: "t", VERCEL: "1" }), "blob");
+  // Synchronous, and reads nothing but these env keys.
+  const seen = new Set();
+  const spy = new Proxy({ ...full }, { get: (t, k) => (seen.add(k), t[k]) });
+  const out = pushStatus(spy);
+  assert.equal(out instanceof Promise, false);
+  const allowed = ["BLOB_READ_WRITE_TOKEN", "VERCEL", "NODE_ENV", "PUSH_ALLOW_FILE_STORE", "VAPID_PRIVATE_KEY", "NOTIFY_SECRET", "SUBSCRIBE_CODE"];
+  for (const k of seen) assert.ok(allowed.includes(k), String(k));
+});
+
+await test("parseState fills and validates fail counters", () => {
+  const base = { v: 1, lastPush: null, writes: { day: "", n: 0 } };
+  const old = { ...base, subs: [{ endpoint: ep(1), keys: keys(), addedAt: NOW }] };
+  assert.equal(parseState(old).subs[0].fails, 0, "older documents default to 0");
+  assert.equal(parseState({ ...base, subs: [{ ...old.subs[0], fails: 2 }] }).subs[0].fails, 2);
+  for (const bad of [-1, 1.5, "1"]) {
+    assert.equal(parseState({ ...base, subs: [{ ...old.subs[0], fails: bad }] }), null, String(bad));
   }
 });
 
