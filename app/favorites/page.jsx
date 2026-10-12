@@ -168,7 +168,7 @@ function SavedApp() {
         mode={edit.mode}
         folder={edit.folder}
         focusName={edit.focusName}
-        folderCount={folders.length}
+        folders={folders}
         onClose={closeEdit}
         returnFocusRef={edit.mode === "edit" ? moreRef : undefined}
         onCreate={(look) => {

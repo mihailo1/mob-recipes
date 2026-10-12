@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { usePathname } from "next/navigation";
 
 /*
  * iOS style bottom sheet, rendered in a portal above the tab bar, the resume
@@ -12,6 +13,7 @@ import { createPortal } from "react-dom";
  * - Drag the handle/header down to dismiss (past 100px, or a fast flick).
  * - Escape closes, Tab is trapped inside, focus returns to the opener.
  * - Page scroll is locked while any sheet is open.
+ * - Closes itself when the route changes (e.g. browser Back while open).
  * - Follows the iOS keyboard via visualViewport so inputs stay visible.
  *
  * Props:
@@ -139,6 +141,16 @@ export default function BottomSheet({
       back?.focus({ preventScroll: true });
     };
   }, [mounted, initialFocusRef, returnFocusRef]);
+
+  // Route change (Back/Forward, links): close instead of lingering over the
+  // next page.
+  const pathname = usePathname();
+  const pathRef = useRef(pathname);
+  useEffect(() => {
+    if (pathRef.current === pathname) return;
+    pathRef.current = pathname;
+    if (open) onClose();
+  }, [pathname, open, onClose]);
 
   // Escape + focus trap.
   useEffect(() => {

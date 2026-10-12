@@ -17,7 +17,7 @@ export function FolderEditSheet({
   open,
   mode,
   folder,
-  folderCount = 0,
+  folders = [],
   focusName = false,
   onClose,
   onCreate,
@@ -28,7 +28,7 @@ export function FolderEditSheet({
   const [error, setError] = useState("");
   const creating = mode === "create";
   const initial = creating
-    ? { name: "", ...suggestedLook(folderCount) }
+    ? { name: "", ...suggestedLook(folders) }
     : { name: folder?.name || "", emoji: folder?.emoji, color: folder?.color };
 
   return (

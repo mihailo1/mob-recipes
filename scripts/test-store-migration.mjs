@@ -395,6 +395,36 @@ test("setRecipeInFolder: adds newest first, auto-favorites, removes from one fol
   assert.equal(st.favorites.has("zzz"), false);
 });
 
+test("setRecipeInFolder: a full folder refuses new items (state unchanged)", () => {
+  const base = F.createFolder([], {}, 1, "a").folders;
+  const items = Array.from({ length: MAX_FOLDER_ITEMS }, (_, i) => ({ slug: `s${i}`, addedAt: i }));
+  const folders = [{ ...base[0], items }];
+  const favorites = new Map(items.map((i) => [i.slug, i.addedAt]));
+  const st = { favorites, folders };
+  assert.equal(F.setRecipeInFolder(st, "extra", "a", true, 99), st);
+  assert.equal(F.setRecipeInFolder(st, "s1", "a", true, 99), st); // already in: no-op
+  assert.equal(st.favorites.has("extra"), false);
+});
+
+test("suggestFolderLook skips emojis and colors already used", () => {
+  assert.deepEqual(F.suggestFolderLook([]), { emoji: F.FOLDER_EMOJIS[0], color: F.FOLDER_COLORS[0] });
+  let folders = [];
+  for (let i = 0; i < 6; i++) {
+    const look = F.suggestFolderLook(folders);
+    assert.ok(!folders.some((f) => f.emoji === look.emoji || f.color === look.color));
+    folders = F.createFolder(folders, look, 1, `f${i}`).folders;
+  }
+  // custom first folder using the 3rd color: the next one avoids it
+  const used = [{ emoji: F.FOLDER_EMOJIS[0], color: F.FOLDER_COLORS[2].toUpperCase() }];
+  assert.notEqual(F.suggestFolderLook(used).color.toLowerCase(), F.FOLDER_COLORS[2]);
+  assert.notEqual(F.suggestFolderLook(used).emoji, F.FOLDER_EMOJIS[0]);
+  // everything used: still returns valid values
+  const all = F.FOLDER_COLORS.map((c, i) => ({ emoji: F.FOLDER_EMOJIS[i], color: c }));
+  const full = F.FOLDER_EMOJIS.map((e, i) => ({ emoji: e, color: F.FOLDER_COLORS[i % F.FOLDER_COLORS.length] }));
+  assert.ok(F.FOLDER_COLORS.includes(F.suggestFolderLook(full).color));
+  assert.ok(F.FOLDER_EMOJIS.includes(F.suggestFolderLook(all).emoji));
+});
+
 test("unfavorite removes from all folders; restore puts back at the right position", () => {
   let folders = F.createFolder([], {}, 1, "a").folders;
   folders = F.createFolder(folders, {}, 1, "b").folders;

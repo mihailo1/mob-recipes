@@ -11,7 +11,8 @@ import { HeartIcon } from "./icons";
  *   2 images  two halves
  *   3 images  one tall + two stacked
  *   4 images  2x2 mosaic
- * With images, a small emoji badge in the folder color keeps the identity.
+ * With images, a solid badge and a thin bar in the folder color (the app
+ * accent for All saved) keep the identity; photo gutters are 2px of page color.
  *
  * variant "tile" (strip, ~130px), "mini" (sheet rows, 44px; one image max),
  * "all" (the All saved tile: heart instead of an emoji).
@@ -40,7 +41,8 @@ function FolderCoverBase({ images, emoji, color, variant = "tile", all = false }
   const mini = variant === "mini";
   const list = mini ? images.slice(0, 1) : images;
   const n = list.length;
-  const style = color ? { "--fd-c": color } : undefined;
+  // "All saved" uses the app accent as its color.
+  const style = all ? { "--fd-c": "var(--accent)" } : color ? { "--fd-c": color } : undefined;
   const glyph = all ? <HeartIcon size={mini ? 20 : 40} /> : emoji;
 
   if (n === 0) {
@@ -56,7 +58,9 @@ function FolderCoverBase({ images, emoji, color, variant = "tile", all = false }
       {list.map((src, i) => (
         <Img key={`${i}:${src}`} src={src} w={n === 1 && !mini ? 384 : 256} />
       ))}
-      {!mini && !all ? <span className="fd-cover-badge">{emoji}</span> : null}
+      {!mini ? (
+        <span className="fd-cover-badge">{all ? <HeartIcon size={16} /> : emoji}</span>
+      ) : null}
     </span>
   );
 }

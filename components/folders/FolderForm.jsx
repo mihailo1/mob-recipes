@@ -1,18 +1,13 @@
 "use client";
 
 import { useId, useLayoutEffect, useRef, useState } from "react";
-import { FOLDER_COLORS, FOLDER_EMOJIS } from "../../lib/folders.mjs";
+import { FOLDER_COLORS, FOLDER_EMOJIS, suggestFolderLook } from "../../lib/folders.mjs";
 import { CheckIcon } from "./icons";
 
 export const MAX_NAME = 40;
 
-/** Defaults for a new folder, varied by how many folders exist already. */
-export function suggestedLook(count = 0) {
-  return {
-    emoji: FOLDER_EMOJIS[(count + 1) % FOLDER_EMOJIS.length],
-    color: FOLDER_COLORS[count % FOLDER_COLORS.length],
-  };
-}
+/** Default icon + color for a new folder: not used by any existing folder. */
+export const suggestedLook = suggestFolderLook;
 
 /*
  * Name + icon + color form, used inline in the "Save to folder" sheet and in

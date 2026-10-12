@@ -297,8 +297,12 @@ function moveFolder(id, toIndex) {
 }
 
 // Adding also favorites the recipe when needed; removing touches that folder only.
+// Returns false when an add was refused (unknown folder, or folder is full).
 function setRecipeInFolder(slug, folderId, inFolder) {
-  commit(F.setRecipeInFolder(currentData(), slug, folderId, !!inFolder));
+  const next = F.setRecipeInFolder(currentData(), slug, folderId, !!inFolder);
+  commit(next);
+  if (!inFolder) return true;
+  return !!next.folders.find((f) => f.id === folderId)?.items.some((i) => i.slug === slug);
 }
 
 function setLastRecipe(recipe) {

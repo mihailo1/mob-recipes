@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import BottomSheet from "../BottomSheet";
 import { optimized } from "../RecipeImage";
 import { useKitchen } from "../../lib/store";
 import { useRecipeIndex } from "../../lib/queries";
+import { showToast } from "../Toast";
 import FolderCover from "./FolderCover";
 import FolderForm, { suggestedLook } from "./FolderForm";
 import { CheckIcon, PlusIcon } from "./icons";
@@ -21,12 +22,16 @@ import {
 export const FOLDER_LIMIT_MESSAGE =
   "You've reached 50 folders. Delete one to make room for a new one.";
 
+// Keep the session mounted until the BottomSheet exit animation is done.
+const UNMOUNT_AFTER_MS = 420;
+
 /*
  * Global "Save to folder" sheet. Any component can call
  * openAddToFolder({ slug, name, image }); <AddToFolderHost /> renders it.
  */
 
 let session = null; // { key, open, recipe }
+let sessionSeq = 0;
 const listeners = new Set();
 const emit = () => listeners.forEach((l) => l());
 const subscribe = (l) => {
@@ -37,7 +42,7 @@ const subscribe = (l) => {
 export function openAddToFolder(recipe) {
   if (!recipe?.slug) return;
   session = {
-    key: (session?.key || 0) + 1,
+    key: ++sessionSeq,
     open: true,
     recipe: { slug: recipe.slug, name: recipe.name || "", image: recipe.image || "" },
   };
@@ -46,8 +51,31 @@ export function openAddToFolder(recipe) {
 
 export function closeAddToFolder() {
   if (!session?.open) return;
-  session = { ...session, open: false };
+  const closing = session;
+  session = { ...closing, open: false };
   emit();
+  // Unmount the sheet (and its store subscriptions) once it is fully gone.
+  setTimeout(() => {
+    if (session && session.key === closing.key && !session.open) {
+      session = null;
+      emit();
+    }
+  }, UNMOUNT_AFTER_MS);
+}
+
+/**
+ * Where focus goes when the sheet closes and the control that opened it is
+ * gone (the toast's "Add to folder" button): the recipe's own button on the
+ * page if there is one, else the main heading.
+ */
+function focusTargetFor(slug) {
+  if (typeof document === "undefined") return null;
+  const esc = typeof CSS !== "undefined" && CSS.escape ? CSS.escape(slug) : slug;
+  const btn = document.querySelector(`[data-focus-slug="${esc}"]`);
+  if (btn) return btn;
+  const h = document.querySelector("main h1, h1");
+  if (h && !h.hasAttribute("tabindex")) h.setAttribute("tabindex", "-1");
+  return h;
 }
 
 export function AddToFolderHost() {
@@ -110,6 +138,15 @@ export default function AddToFolderSheet({ open, recipe, onClose }) {
   const listRef = useRef(null);
 
   const slug = recipe?.slug;
+  // `current` is read lazily by BottomSheet when it restores focus on close.
+  const returnFocusRef = useMemo(
+    () => ({
+      get current() {
+        return focusTargetFor(slug);
+      },
+    }),
+    [slug],
+  );
   const saved = !!slug && favorites.has(slug);
   const status = mine.length
     ? `In ${mine.length === 1 ? mine[0].name : `${mine.length} folders`}`
@@ -129,7 +166,9 @@ export default function AddToFolderSheet({ open, recipe, onClose }) {
       setError(FOLDER_LIMIT_MESSAGE);
       return;
     }
-    setRecipeInFolder(slug, id, true);
+    if (!setRecipeInFolder(slug, id, true)) {
+      showToast({ message: "Couldn’t add to the new folder", icon: "folder" });
+    }
     tick();
     setCreating(false);
     listRef.current?.scrollTo?.({ top: 0 });
@@ -141,6 +180,7 @@ export default function AddToFolderSheet({ open, recipe, onClose }) {
       onClose={onClose}
       title="Save to folder"
       className="fd-sheet"
+      returnFocusRef={returnFocusRef}
       headerEnd={
         <button type="button" className="bs-done" onClick={onClose}>
           Done
@@ -174,7 +214,7 @@ export default function AddToFolderSheet({ open, recipe, onClose }) {
           {creating ? (
             <div className="fd-create">
               <FolderForm
-                initial={{ name: "", ...suggestedLook(folders.length) }}
+                initial={{ name: "", ...suggestedLook(folders) }}
                 submitLabel="Create"
                 autoFocus
                 error={error}
@@ -203,7 +243,9 @@ export default function AddToFolderSheet({ open, recipe, onClose }) {
                 checked={on}
                 onToggle={() => {
                   tick();
-                  setRecipeInFolder(slug, f.id, !on);
+                  if (!setRecipeInFolder(slug, f.id, !on)) {
+                    showToast({ message: "This folder is full", icon: "folder" });
+                  }
                 }}
               />
             </li>

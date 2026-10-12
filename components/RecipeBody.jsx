@@ -83,6 +83,7 @@ export default function RecipeBody({ recipe }) {
         <button
           type="button"
           className={`pill-btn fd-pill ${myFolders.length ? "is-active" : ""}`}
+          data-focus-slug={recipe.slug}
           aria-label={
             myFolders.length
               ? `In ${myFolders.length === 1 ? `folder ${myFolders[0].name}` : `${myFolders.length} folders`}. Change folders`

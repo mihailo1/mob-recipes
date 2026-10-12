@@ -27,6 +27,7 @@ export default function RecipeCard({ recipe, onFolder, inFolder = false }) {
           type="button"
           aria-label={isFav ? "Remove from favorites" : "Save to favorites"}
           className={`icon-btn ${isFav ? "is-active" : ""}`}
+          data-focus-slug={onFolder ? undefined : recipe.slug}
           onClick={() => toggleSave(recipe)}
         >
           {isFav ? "♥" : "♡"}
@@ -36,6 +37,7 @@ export default function RecipeCard({ recipe, onFolder, inFolder = false }) {
             type="button"
             aria-label={inFolder ? "Change folders" : "Add to folder"}
             className={`icon-btn fd-card-btn ${inFolder ? "is-active" : ""}`}
+            data-focus-slug={recipe.slug}
             onClick={onFolder}
           >
             <FolderIcon size={17} filled={inFolder} />
