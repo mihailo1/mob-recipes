@@ -11,7 +11,7 @@
  * which posts {type: "SKIP_WAITING"}. User data lives in localStorage, which
  * the worker never touches.
  */
-const VERSION = "0.4.1";
+const VERSION = "0.4.2";
 const PREFIX = "mob-";
 const CACHES = {
   pages: `${PREFIX}pages-${VERSION}`,
@@ -239,3 +239,97 @@ async function networkFirstPage(event) {
     });
   }
 }
+
+// --- Update alerts (Web Push) -------------------------------------------
+// iOS revokes a push subscription if a push arrives and no notification is
+// shown, so this handler ALWAYS shows one, even for empty or broken payloads.
+const PUSH_DEFAULTS = {
+  title: "Mob Recipes",
+  body: "A new version is ready. Open the app to update.",
+  tag: "mob-update",
+  url: "/",
+};
+
+function parsePush(event) {
+  let data = null;
+  try {
+    data = event.data ? event.data.json() : null;
+  } catch {
+    try {
+      const text = event.data && event.data.text();
+      data = text ? { body: text } : null;
+    } catch {
+      data = null;
+    }
+  }
+  if (!data || typeof data !== "object") data = {};
+  const str = (v, fallback) =>
+    typeof v === "string" && v.trim() ? v.trim().slice(0, 300) : fallback;
+  return {
+    title: str(data.title, PUSH_DEFAULTS.title),
+    body: str(data.body, PUSH_DEFAULTS.body),
+    tag: str(data.tag, PUSH_DEFAULTS.tag),
+    url: str(data.url, PUSH_DEFAULTS.url),
+  };
+}
+
+self.addEventListener("push", (event) => {
+  const { title, body, tag, url } = parsePush(event);
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      tag,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url },
+    }),
+  );
+});
+
+function sameOriginUrl(raw) {
+  try {
+    const u = new URL(typeof raw === "string" && raw ? raw : "/", self.location.origin);
+    return u.origin === self.location.origin ? u.href : new URL("/", self.location.origin).href;
+  } catch {
+    return new URL("/", self.location.origin).href;
+  }
+}
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = sameOriginUrl(event.notification.data && event.notification.data.url);
+  event.waitUntil(
+    (async () => {
+      const list = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const existing = list.find((c) => new URL(c.url).origin === self.location.origin);
+      if (existing) {
+        let client = existing;
+        try {
+          if (client.url !== target && "navigate" in client) {
+            client = (await client.navigate(target)) || client;
+          }
+        } catch {
+          // Navigation can fail (e.g. client not controlled yet): just focus.
+        }
+        try {
+          await client.focus();
+        } catch {
+          // ignore
+        }
+        // Harmless if the page ignores it; opening the app already re-checks.
+        try {
+          client.postMessage({ type: "CHECK_UPDATE" });
+        } catch {
+          // ignore
+        }
+        return;
+      }
+      const opened = await self.clients.openWindow(target);
+      try {
+        if (opened) opened.postMessage({ type: "CHECK_UPDATE" });
+      } catch {
+        // ignore
+      }
+    })(),
+  );
+});

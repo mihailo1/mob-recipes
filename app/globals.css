@@ -3441,3 +3441,80 @@ html[data-resume] .toast-host {
   font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: pre-wrap;
 }
+
+/* --- Update alerts card (components/PushToggle.jsx) ------------------------ */
+.pt-card {
+  margin: 28px 0 32px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  max-width: 100%;
+}
+.pt-title {
+  margin: 0 0 4px;
+  font-size: 16px;
+  letter-spacing: -0.005em;
+}
+.pt-text {
+  margin: 0 0 12px;
+  color: var(--ink-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.pt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pt-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+}
+.pt-state {
+  font-size: 15px;
+  font-weight: 600;
+}
+.pt-link {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: 15px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.pt-link:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pt-note {
+  margin: 8px 0 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.pt-live {
+  min-height: 19px;
+}

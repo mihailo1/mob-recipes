@@ -1,0 +1,117 @@
+name: Notify update
+
+# Sends one "new version" Web Push after a Production deploy that ships a new
+# app version. Vercel's GitHub integration emits deployment_status events.
+# The server enforces the real limits (max one push per 24h, device cap), so
+# this workflow only decides WHEN to call it.
+#
+# A manual run (workflow_dispatch) with `force` set bypasses the server's
+# 24h limit and the "already sent" check, and ignores an existing version
+# tag. Use it only to test.
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force: bypass the 24h limit and the already-sent check (testing only)"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write # only to push the v<version> tag
+
+concurrency:
+  group: notify-update
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NOTIFY_SECRET: ${{ secrets.NOTIFY_SECRET }}
+      FORCE: ${{ github.event.inputs.force == 'true' }}
+      SITE: https://mob-recipes.vercel.app
+    steps:
+      - name: Check setup
+        id: gate
+        run: |
+          if [ -z "$NOTIFY_SECRET" ]; then
+            echo "Update alerts are not set up"
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout deployed commit
+        if: steps.gate.outputs.go == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha || github.sha }}
+          fetch-depth: 1
+
+      - name: Read version and check tag
+        id: ver
+        if: steps.gate.outputs.go == 'true'
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Unexpected version format"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ -n "$(git ls-remote --tags origin "refs/tags/v$VERSION")" ]; then
+            echo "tag_exists=true" >> "$GITHUB_OUTPUT"
+            if [ "$FORCE" != "true" ]; then
+              echo "Version $VERSION was already handled (tag v$VERSION exists). Nothing to do."
+              echo "go=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "go=true" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for the new version to be live
+        if: steps.gate.outputs.go == 'true' && steps.ver.outputs.go == 'true'
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          for i in $(seq 1 18); do
+            if curl -fsS -m 15 "$SITE/sw.js?cb=$(date +%s)" | grep -qF "const VERSION = \"$VERSION\""; then
+              echo "Version $VERSION is live"
+              exit 0
+            fi
+            echo "Waiting for version $VERSION ($i/18)"
+            sleep 10
+          done
+          echo "Version $VERSION did not go live in time"
+          exit 1
+
+      - name: Send push
+        if: steps.gate.outputs.go == 'true' && steps.ver.outputs.go == 'true'
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          BODY=$(printf '{"version":"%s","force":%s}' "$VERSION" "$FORCE")
+          if ! RESPONSE=$(curl --fail-with-body -sS -m 30 -X POST "$SITE/api/push/notify" \
+            -H "Authorization: Bearer $NOTIFY_SECRET" \
+            -H "content-type: application/json" \
+            -d "$BODY"); then
+            echo "Notify failed: $RESPONSE"
+            exit 1
+          fi
+          echo "Notify response: $RESPONSE"
+
+      - name: Tag the version as handled
+        if: steps.gate.outputs.go == 'true' && steps.ver.outputs.go == 'true' && steps.ver.outputs.tag_exists != 'true'
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "v$VERSION"
+          git push origin "v$VERSION"

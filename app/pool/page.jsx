@@ -6,6 +6,7 @@ import { useKitchen } from "../../lib/store";
 import { useRecipes } from "../../lib/queries";
 import { aggregateIngredients } from "../../lib/ingredients.mjs";
 import RecipeImage from "../../components/RecipeImage";
+import PushToggle from "../../components/PushToggle";
 
 function loadChecked() {
   try {
@@ -205,6 +206,7 @@ export default function PoolPage() {
           </p>
         </>
       )}
+      <PushToggle />
     </div>
   );
 }

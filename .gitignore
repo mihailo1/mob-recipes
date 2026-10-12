@@ -6,3 +6,4 @@ out
 public/search-index.json
 data/scrape-errors.json
 .DS_Store
+.push-dev-state.json
