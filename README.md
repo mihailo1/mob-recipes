@@ -24,6 +24,15 @@ than any private endpoint — no login, no paywall bypass.
   Full ingredients/instructions are only rendered on each recipe's own
   statically-generated detail page, so the homepage stays light even with
   thousands of recipes.
+- "On your other device": while the app is on screen it tells
+  `/api/nearby` every few seconds which recipe is open, and the server answers
+  with what other devices behind the same public IP (same Wi-Fi) have open.
+  The entries live a minute in Upstash Redis (added from the Vercel
+  Marketplace, which sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`); only a
+  salted hash of the IP is stored. Without Redis the feature is simply off.
+  It cannot match devices when iCloud Private Relay is on or when one device
+  uses IPv4 and the other IPv6. Logic: `lib/nearby.mjs`, tests:
+  `node scripts/test-nearby.mjs`.
 
 ## Running it yourself
 

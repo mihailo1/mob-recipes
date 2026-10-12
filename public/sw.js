@@ -11,18 +11,18 @@
  * which posts {type: "SKIP_WAITING"}. User data lives in localStorage, which
  * the worker never touches.
  */
-const VERSION = "0.4.4";
+const VERSION = "0.5.0";
 // true: this release installs and takes over on its own, and open pages are
 // reloaded, with no "Update" banner. Must equal `silent` on the newest entry
 // in lib/changelog.js (next.config.mjs fails the build otherwise). Set it back
 // to false for any normal release.
-const SILENT_UPDATE = true;
+const SILENT_UPDATE = false;
 let replacingWorker = false;
 const PREFIX = "mob-";
 // Bump REV to ship a fix under the same VERSION: any change to this file makes
 // phones install the worker (silently while SILENT_UPDATE is true), and a new
 // REV drops the cached HTML and JSON from the previous build.
-const REV = 2;
+const REV = 1;
 const CACHES = {
   pages: `${PREFIX}pages-${VERSION}-r${REV}`,
   data: `${PREFIX}data-${VERSION}-r${REV}`,

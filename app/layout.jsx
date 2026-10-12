@@ -4,6 +4,7 @@ import NavBar from "../components/NavBar";
 import SWRegister from "../components/SWRegister";
 import IOSZoomGuard from "../components/IOSZoomGuard";
 import ViewportFix from "../components/ViewportFix";
+import NearbySync from "../components/NearbySync";
 import Providers from "../components/Providers";
 import AppNotices from "../components/AppNotices";
 import GlobalOverlays from "../components/GlobalOverlays";
@@ -58,6 +59,7 @@ export default function RootLayout({ children }) {
         <SWRegister />
         <IOSZoomGuard />
         <ViewportFix />
+        <NearbySync />
       </body>
     </html>
   );

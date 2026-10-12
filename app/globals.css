@@ -1912,6 +1912,15 @@ html[data-vp-hide] .nb-resume {
   text-transform: uppercase;
   color: var(--ink-muted);
 }
+.nb-resume-nearby .nb-resume-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+}
+.nb-resume-wifi {
+  flex: none;
+}
 .nb-resume-name {
   font-size: 14px;
   font-weight: 700;
