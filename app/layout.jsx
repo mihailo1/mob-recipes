@@ -3,6 +3,7 @@ import { KitchenProvider } from "../lib/store";
 import NavBar from "../components/NavBar";
 import SWRegister from "../components/SWRegister";
 import IOSZoomGuard from "../components/IOSZoomGuard";
+import ViewportFix from "../components/ViewportFix";
 import Providers from "../components/Providers";
 import AppNotices from "../components/AppNotices";
 import GlobalOverlays from "../components/GlobalOverlays";
@@ -56,6 +57,7 @@ export default function RootLayout({ children }) {
         </Providers>
         <SWRegister />
         <IOSZoomGuard />
+        <ViewportFix />
       </body>
     </html>
   );

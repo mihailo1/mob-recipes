@@ -1796,7 +1796,7 @@ h3,
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: calc(0px - var(--nb-lift, 0px));
   z-index: 50;
   display: flex;
   padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom)
@@ -1865,7 +1865,9 @@ h3,
   right: 12px;
   max-width: 560px;
   margin: 0 auto;
-  bottom: calc(var(--nb-tabbar-h) + env(safe-area-inset-bottom) + 8px);
+  bottom: calc(
+    var(--nb-tabbar-h) + env(safe-area-inset-bottom) + 8px - var(--nb-lift, 0px)
+  );
   height: var(--nb-chip-h);
   display: flex;
   align-items: center;
@@ -2358,6 +2360,7 @@ h3,
 .bs-root {
   position: fixed;
   inset: 0;
+  bottom: calc(0px - var(--nb-lift, 0px));
   z-index: 80;
 }
 .bs-backdrop {
@@ -2474,13 +2477,18 @@ h3,
   z-index: 70;
   left: 12px;
   right: 12px;
-  bottom: calc(var(--nb-tabbar-h) + env(safe-area-inset-bottom) + 10px);
+  bottom: calc(
+    var(--nb-tabbar-h) + env(safe-area-inset-bottom) + 10px - var(--nb-lift, 0px)
+  );
   display: flex;
   justify-content: center;
   pointer-events: none;
 }
 html[data-resume] .toast-host {
-  bottom: calc(var(--nb-tabbar-h) + env(safe-area-inset-bottom) + var(--nb-chip-h) + 18px);
+  bottom: calc(
+    var(--nb-tabbar-h) + env(safe-area-inset-bottom) + var(--nb-chip-h) + 18px -
+      var(--nb-lift, 0px)
+  );
 }
 .toast {
   pointer-events: auto;
@@ -3403,4 +3411,33 @@ html[data-resume] .toast-host {
     transition: none;
     animation: none;
   }
+}
+
+/* --- What's new: one group per release when updating across versions ------ */
+.wn-group + .wn-group {
+  margin-top: 12px;
+}
+.wn-ver {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* --- Viewport readout (tap the version line 5 times) ---------------------- */
+.vp-debug {
+  position: fixed;
+  z-index: 120;
+  top: calc(env(safe-area-inset-top) + 8px);
+  left: 8px;
+  right: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(20, 22, 16, 0.88);
+  color: #f4f4ec;
+  font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
 }

@@ -29,8 +29,9 @@ function markSeen() {
  * "What's new" card, once per version.
  * - Brand new install (no saved data, no last-seen version): record silently.
  * - Old-app users (they have favorites/kitchen data but no last-seen
- *   version): show the current release.
+ *   version): show every release, since they have seen none of them.
  * - Otherwise show every release newer than the last seen one.
+ * Releases are listed oldest first, so a patch lands at the bottom.
  * Recorded as seen when dismissed.
  */
 export default function WhatsNew({ blocked }) {
@@ -48,7 +49,7 @@ export default function WhatsNew({ blocked }) {
         markSeen();
         return undefined;
       }
-      list = CHANGELOG.filter((e) => e.version === APP_VERSION).slice(0, 1);
+      list = CHANGELOG.filter((e) => compareVersions(e.version, APP_VERSION) <= 0);
     } else if (compareVersions(seen.value, APP_VERSION) < 0) {
       list = CHANGELOG.filter(
         (e) =>
@@ -60,6 +61,7 @@ export default function WhatsNew({ blocked }) {
       if (seen.value !== APP_VERSION) markSeen();
       return undefined;
     }
+    list = [...list].sort((a, b) => compareVersions(a.version, b.version));
     const t = setTimeout(() => setEntries(list), DELAY_MS);
     return () => clearTimeout(t);
     // Decide once, when the store becomes ready.
@@ -78,7 +80,7 @@ export default function WhatsNew({ blocked }) {
     markSeen();
     setEntries(null);
   };
-  const [latest] = entries;
+  const latest = entries[entries.length - 1];
 
   return (
     <section className="wn" aria-labelledby="wn-title">
@@ -95,9 +97,20 @@ export default function WhatsNew({ blocked }) {
           </svg>
         </button>
       </div>
-      <ul className="wn-list">
-        {entries.flatMap((e) => e.items.map((item) => <li key={`${e.version}:${item}`}>{item}</li>))}
-      </ul>
+      {entries.map((e) => (
+        <div key={e.version} className="wn-group">
+          {entries.length > 1 ? (
+            <h3 className="wn-ver">
+              {shortVersion(e.version)} · {e.title}
+            </h3>
+          ) : null}
+          <ul className="wn-list">
+            {e.items.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
       <button type="button" className="wn-ok" onClick={dismiss}>
         Got it
       </button>
