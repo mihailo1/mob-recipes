@@ -25,29 +25,44 @@ How it works:
 Needs the Vercel CLI (`vercel`) and the GitHub CLI (`gh`), both logged in. The
 secrets are in `~/.config/mob-recipes/push-secrets.env` as `KEY=value` lines
 (`VAPID_PRIVATE_KEY`, `NOTIFY_SECRET`, `SUBSCRIBE_CODE`). The commands below
-read them without printing them.
+read them without printing them. Run them in a terminal where `node` is 20 or
+newer (the system default may be too old for the Vercel CLI):
+
+```sh
+export PATH=~/.nvm/versions/node/v22.22.0/bin:$PATH
+```
 
 1. Create a private Blob store in the dashboard: Project, Storage tab, Create
    Database (or Create Store), Blob, choose Private, connect it to this
-   project. Connecting injects `BLOB_READ_WRITE_TOKEN`. The `vercel blob
-   create-store` CLI form is unverified, so prefer the dashboard.
+   project for Production. Connecting injects `BLOB_READ_WRITE_TOKEN`. The
+   `vercel blob create-store` CLI form needs a newer CLI than 39.x, so use the
+   dashboard.
 
-2. Set the three secrets on Vercel Production, then redeploy:
+2. Set the three secrets on Vercel Production. Run this from the checkout that
+   is linked to the Vercel project (the one with a `.vercel` folder, for
+   example `~/Projects/mob-recipes`), not from a fresh worktree:
 
    ```sh
+   cd ~/Projects/mob-recipes
    (
      set -a; . ~/.config/mob-recipes/push-secrets.env; set +a
      printf %s "$VAPID_PRIVATE_KEY" | vercel env add VAPID_PRIVATE_KEY production
      printf %s "$NOTIFY_SECRET" | vercel env add NOTIFY_SECRET production
      printf %s "$SUBSCRIBE_CODE" | vercel env add SUBSCRIBE_CODE production
    )
-   vercel --prod
    ```
 
    `SUBSCRIBE_CODE` is the access code. Without it anyone could fill the 5
    device slots and spend the Blob allowance, so always set it.
 
-   (Or redeploy from the Vercel dashboard: Deployments, latest, Redeploy.)
+   Environment variables only apply to NEW deployments. The next merge to
+   `main` creates one. To apply them without a code change, use the dashboard:
+   Deployments, latest production deployment, Redeploy. Do not use
+   `vercel --prod` for this, it uploads the local folder instead of git.
+
+   Dashboard alternative: Settings, Environment Variables, Add, paste the
+   value, tick Production only. To put one value on the clipboard without
+   printing it: `grep '^NOTIFY_SECRET=' ~/.config/mob-recipes/push-secrets.env | cut -d= -f2- | tr -d '\n' | pbcopy`.
 
 3. Give the same notify secret to GitHub Actions:
 
