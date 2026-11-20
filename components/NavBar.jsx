@@ -9,6 +9,7 @@ import { recipeIndexQuery } from "../lib/queries";
 import ResumeChip from "./ResumeChip";
 import { openScanner } from "./share/QrScanner";
 import { OPEN, tabTypes } from "../lib/transitions";
+import { useTabHref } from "../lib/tabMemory";
 
 const ICON_PROPS = {
   width: 24,
@@ -73,11 +74,18 @@ export default function NavBar() {
   const queryClient = useQueryClient();
   const [rolling, setRolling] = useState(false);
 
+  // Each tab reopens where it was left (filters, Saved folder); tapping the
+  // tab you are on goes to its top level as before.
+  const lastUrl = {
+    "/": useTabHref("/"),
+    "/pool": useTabHref("/pool"),
+    "/favorites": useTabHref("/favorites"),
+  };
   const tabs = [
     { href: "/", label: "Discover", Icon: DiscoverIcon, count: 0 },
     { href: "/pool", label: "My kitchen", Icon: KitchenIcon, count: pool.size },
     { href: "/favorites", label: "Saved", Icon: SavedIcon, count: favorites.size },
-  ];
+  ].map((t) => ({ ...t, to: pathname === t.href ? t.href : lastUrl[t.href] }));
 
   async function surpriseMe() {
     setRolling(true);
@@ -101,13 +109,13 @@ export default function NavBar() {
           </Link>
 
           <nav className="nb-links" aria-label="Main">
-            {tabs.map(({ href, label, count }) => {
+            {tabs.map(({ href, to, label, count }) => {
               const active = pathname === href;
               return (
                 <Link
                   key={href}
-                  href={href}
-                  scroll={href === "/" ? false : undefined}
+                  href={to}
+                  scroll={false}
                   transitionTypes={tabTypes(pathname, href)}
                   aria-current={active ? "page" : undefined}
                   className={`nb-link ${active ? "active" : ""}`}
@@ -141,13 +149,13 @@ export default function NavBar() {
       </header>
 
       <nav className="nb-tabbar" aria-label="Tabs">
-        {tabs.map(({ href, label, Icon, count }) => {
+        {tabs.map(({ href, to, label, Icon, count }) => {
           const active = pathname === href;
           return (
             <Link
               key={href}
-              href={href}
-              scroll={href === "/" ? false : undefined}
+              href={to}
+              scroll={false}
               transitionTypes={tabTypes(pathname, href)}
               aria-current={active ? "page" : undefined}
               className={`nb-tab ${active ? "active" : ""}`}

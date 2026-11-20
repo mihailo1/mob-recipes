@@ -10,6 +10,7 @@ import Providers from "../components/Providers";
 import AppNotices from "../components/AppNotices";
 import GlobalOverlays from "../components/GlobalOverlays";
 import OfflineKeeper from "../components/OfflineKeeper";
+import TabMemory from "../components/TabMemory";
 import { APP_VERSION } from "../lib/version";
 
 export const metadata = {
@@ -62,6 +63,7 @@ export default function RootLayout({ children }) {
             <GlobalOverlays />
             <SyncEngine />
             <OfflineKeeper />
+            <TabMemory />
           </KitchenProvider>
         </Providers>
         <SWRegister />

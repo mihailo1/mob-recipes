@@ -1,11 +1,11 @@
 import { readFileSync } from "node:fs";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import BackLink from "../../../components/BackLink";
 import PhotoViewer from "../../../components/PhotoViewer";
 import RecipeBody from "../../../components/RecipeBody";
 import TrackRecentRecipe from "../../../components/TrackRecentRecipe";
 import PageTransition from "../../../components/PageTransition";
-import { BACK, recipePhotoName } from "../../../lib/transitions";
+import { recipePhotoName } from "../../../lib/transitions";
 
 let _cache = null;
 function getRecipeMap() {
@@ -55,9 +55,7 @@ export default async function RecipePage({ params }) {
           name={recipe.name}
           image={recipe.image || ""}
         />
-        <Link href="/" scroll={false} transitionTypes={BACK} className="back-link">
-          ← Back to search
-        </Link>
+        <BackLink />
 
         <PhotoViewer
           src={recipe.image}

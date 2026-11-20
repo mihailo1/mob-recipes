@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useKitchen } from "../../lib/store";
 import { useRecipes } from "../../lib/queries";
@@ -15,6 +15,7 @@ import { groupByAisle, shoppingListText } from "../../lib/aisles.mjs";
 import { haptic } from "../../lib/haptics";
 import Haptic from "../../components/Haptic";
 import { OPEN } from "../../lib/transitions";
+import { useListRestoration } from "../../lib/useListRestoration";
 
 function loadChecked() {
   try {
@@ -23,6 +24,35 @@ function loadChecked() {
   } catch {
     return new Set();
   }
+}
+
+// Overview / Recipes / Shopping list: kept for this browser tab, so coming
+// back from a recipe (or from another tab) shows the same view.
+const VIEW_KEY = "mob-recipes:pool-view";
+const VIEWS = ["all", "recipes", "shopping"];
+const viewListeners = new Set();
+
+function readView() {
+  try {
+    const v = window.sessionStorage.getItem(VIEW_KEY);
+    return VIEWS.includes(v) ? v : "all";
+  } catch {
+    return "all";
+  }
+}
+
+function writeView(v) {
+  try {
+    window.sessionStorage.setItem(VIEW_KEY, v);
+  } catch {
+    // storage unavailable: the view just is not remembered
+  }
+  for (const fn of viewListeners) fn();
+}
+
+function subscribeView(fn) {
+  viewListeners.add(fn);
+  return () => viewListeners.delete(fn);
 }
 
 const itemKey = (i) => `${i.name}::${i.unit || ""}`;
@@ -40,7 +70,7 @@ function saveChecked(set) {
 
 export default function PoolPage() {
   const { pool, togglePool, clearPool, ready } = useKitchen();
-  const [view, setView] = useState("all");
+  const view = useSyncExternalStore(subscribeView, readView, () => "all");
   const [checked, setChecked] = useState(() => new Set());
 
   useEffect(() => {
@@ -52,6 +82,9 @@ export default function PoolPage() {
   // Cached per slug, so toggling the pool or coming back is instant.
   const poolSlugs = useMemo(() => [...pool], [pool]);
   const { recipes, isPending: loading } = useRecipes(poolSlugs);
+
+  // Scroll position survives opening a recipe and coming back.
+  useListRestoration({ key: "/pool", ready: ready && !loading });
 
   const shoppingList = useMemo(() => aggregateIngredients(recipes), [recipes]);
   const aisles = useMemo(() => groupByAisle(shoppingList), [shoppingList]);
@@ -110,7 +143,7 @@ export default function PoolPage() {
                   className="pill-btn"
                   aria-pressed={view === id}
                   key={id}
-                  onClick={() => setView(id)}
+                  onClick={() => writeView(id)}
                 >
                   {label}
                 </button>
